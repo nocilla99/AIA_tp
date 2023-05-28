@@ -1,6 +1,6 @@
 import numpy as np
 from carga_datos import y_cancer, X_cancer
-
+#########################Ejercicio1
 '''
 bucle recorrer len(y) (que es el mismo de "X").
 Separar los conjuntos en distintas clases no serviria porque dice que tiene que aparecer en el mismo orden (*)
@@ -79,3 +79,7 @@ def separar_ejemplos(X,y,test):
     print(y[0])
     return conjunto_training,conjunto_test
 
+
+######################### Fin Ejercicio1
+
+#########################Ejercicio2
