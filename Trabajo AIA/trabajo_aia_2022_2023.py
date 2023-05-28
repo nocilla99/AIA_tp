@@ -185,13 +185,67 @@ import numpy as np
 
 import funciones
 def particion_entr_prueba(X,y,test):
-    conjunto_train, conjunto_test = funciones.ejercicio1(X,y,test)
+   
+    '''
+    Aqui se indica qué fila pertenece a cada clase. 
+    Se crea un diccionario donde las keys son las clases y los valores de cada key son las filas de esa clase
+
+    Entrada: la lista de clasificaciones
+    Salida: indices de las filas de cada clase
+    '''
+    def separar_indices(y):
+        diccionario_indices= dict()
+
+        for i in range(0,len(y)):
+            if y[i] in diccionario_indices:
+                diccionario_indices[y[i]].append(i)
+            else:
+                diccionario_indices[y[i]]=[i]
+
+        #print (diccionario_indices)
+        return diccionario_indices
 
 
+    '''
+    Shufflear los elementos de forma random, separarlos segun el atributo test(proporcion)
+    meterlos en listas de conjunto_training y conjunto_test
+    Ordenar cada conjunto en orden (para que se mantenga)
 
+    Entrada: separarIndices, test
+    Salida: indices de las filas para test e indices para training
+    '''
 
+    def separar_clases_test_training(y,test):
+        indices_training = list()
+        indices_test = list()
+    
+        diccionario_indices = separar_indices(y)
 
+        for clase in diccionario_indices:
+            np.random.shuffle(diccionario_indices[clase])  
+            indices = len(diccionario_indices[clase])
+            tamanyo = int(indices*test)
+            indices_training += diccionario_indices[clase][tamanyo-1:]
+            indices_test += diccionario_indices[clase][:tamanyo-1]
+        
+        
+        indices_test.sort()
+        indices_training.sort()
+        # print(indices_training , indices_test)
+        return indices_training,indices_test
+            
 
+    '''
+    Entrada X, y , test(proporcion)
+    Separa los ejemplos X en conjunto de test y entrenamientos
+
+    Salida: conjunto_training,conjunto_test
+    '''
+
+    ind_tr, ind_te = separar_clases_test_training(y, test)
+    conjunto_training = [ X[i] for i in ind_tr]
+    conjunto_test = [ X[i] for i in ind_te]
+    return conjunto_training,conjunto_test
 
 
 
@@ -266,20 +320,25 @@ class NormalizadorNoAjustado(Exception): pass
 
 # ------ 
 
+class NormalizadorStandard():
 
+    def __init__(self):
+        self.media
+        self.desv_tipica
+        
+    def ajusta(self,X):
+        #axis 0 se usa para indicar que lo que queremos normalizar es el atributo (columna)
+        self.media= np.mean(X,axis=0)
+        self.desv_tipica= np.mean(X,axis=0)
 
-
-
-
-
-
-
-
-
-
-
-
-
+    def normaliza(self,X):
+        #Para lo del error: en el metodo anterior se le asigna un valor, entonces si no 
+        #se ha ajustado antes el conjunto de datos la media y la desv seran None
+        if (self.media is None or self.desv_tipica is None):
+            raise NormalizadorNoAjustado("Error, hay que ajustar antes de normalizar")
+        
+        res = (X-self.media)/self.desv_tipica
+        return res
 
 
 # ------------------------

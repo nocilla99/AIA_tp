@@ -1,14 +1,16 @@
 import funciones
 import numpy as np
-import datos.votos as votos
-
+import carga_datos as cd
 
 def testFuncion1():
     test = round(np.random.random(),3)
-    conjunto_train,conjunto_test= funciones.ejercicio1(votos.datos, votos.clasif, test)
+    conjunto_train,conjunto_test= funciones.ejercicio1(cd.X_cancer, cd.y_cancer, test)
+    print(conjunto_train[0])
     proporcion = round(len(conjunto_test)/len(conjunto_train+conjunto_test),3)
-    print("Proporcion parametro {} \nTamanyo train: {} \nTamanyo test: {} \nProporcion real {}".format(test,len(conjunto_train),len(conjunto_test),proporcion))
+    print("Proporcion parametro: {} \nProporcion real: {}\nTamanyo train: {} \nTamanyo test: {}".format(test,len(conjunto_train),len(conjunto_test),proporcion))    
 
+#testFuncion1()
 
-    
-testFuncion1()
+def test2_1():
+    pass
+
