@@ -185,8 +185,7 @@ import numpy as np
 
 import funciones
 def particion_entr_prueba(X,y,test):
-    funciones.separar_indices(X,y,test)
-    
+    conjunto_train, conjunto_test = funciones.ejercicio1(X,y,test)
 
 
 
