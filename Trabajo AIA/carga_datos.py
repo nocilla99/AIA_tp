@@ -52,6 +52,8 @@ cancer=load_breast_cancer()
 X_cancer=cancer.data
 y_cancer=cancer.target
 
+
+print(X_cancer[0])
 #-------------------------------------------
 
 # CRÍTICAS DE PELÍCULAS EN IMDB

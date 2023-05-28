@@ -11,13 +11,13 @@
 # --------------------------------------------------------------------------
 # Autor(a) del trabajo:
 #
-# APELLIDOS:
-# NOMBRE: 
+# APELLIDOS: Guillen Perez
+# NOMBRE: Daniel
 #
 # Segundo(a) componente (si se trata de un grupo):
 #
-# APELLIDOS:
-# NOMBRE:
+# APELLIDOS: Zaza
+# NOMBRE: Zena
 # ----------------------------------------------------------------------------
 
 
@@ -185,7 +185,7 @@ import numpy as np
 
 import funciones
 def particion_entr_prueba(X,y,test):
-    funciones.ejercicio1(X,y,test)
+    funciones.separar_indices(X,y,test)
     
 
 
