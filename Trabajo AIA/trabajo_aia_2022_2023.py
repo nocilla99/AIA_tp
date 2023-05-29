@@ -182,8 +182,6 @@ import numpy as np
 
 
 ## ---------- 
-
-import funciones
 def particion_entr_prueba(X,y,test):
    
     '''
@@ -201,8 +199,6 @@ def particion_entr_prueba(X,y,test):
                 diccionario_indices[y[i]].append(i)
             else:
                 diccionario_indices[y[i]]=[i]
-
-        #print (diccionario_indices)
         return diccionario_indices
 
 
@@ -231,7 +227,7 @@ def particion_entr_prueba(X,y,test):
         
         indices_test.sort()
         indices_training.sort()
-        # print(indices_training , indices_test)
+
         return indices_training,indices_test
             
 
@@ -239,20 +235,14 @@ def particion_entr_prueba(X,y,test):
     Entrada X, y , test(proporcion)
     Separa los ejemplos X en conjunto de test y entrenamientos
 
-    Salida: conjunto_training,conjunto_test
+    Salida: X_training,X_test,y_training,y_test
     '''
 
     ind_tr, ind_te = separar_clases_test_training(y, test)
-    conjunto_training = [ X[i] for i in ind_tr]
-    conjunto_test = [ X[i] for i in ind_te]
-    return conjunto_training,conjunto_test
+    X_training,y_training = [ X[i]for i in ind_tr] , [y[i] for i in ind_tr]
 
-
-
-
-
-
-
+    X_test,y_test = [ X[i] for i in ind_te] , [y[i] for i in ind_te]
+    return X_training,X_test,y_training,y_test
 
 
 
@@ -323,17 +313,17 @@ class NormalizadorNoAjustado(Exception): pass
 class NormalizadorStandard():
 
     def __init__(self):
-        self.media
-        self.desv_tipica
+        self.media = None
+        self.desv_tipica = None
         
     def ajusta(self,X):
         #axis 0 se usa para indicar que lo que queremos normalizar es el atributo (columna)
         self.media= np.mean(X,axis=0)
-        self.desv_tipica= np.mean(X,axis=0)
+        self.desv_tipica= np.std(X,axis=0)
 
     def normaliza(self,X):
         #Para lo del error: en el metodo anterior se le asigna un valor, entonces si no 
-        #se ha ajustado antes el conjunto de datos la media y la desv seran None
+        #se ha ajustado antes el conjunto de datos la media y la desv seran None (el valor de la clase)
         if (self.media is None or self.desv_tipica is None):
             raise NormalizadorNoAjustado("Error, hay que ajustar antes de normalizar")
         
@@ -367,7 +357,37 @@ class NormalizadorStandard():
 
 # ------ 
 
+class NormalizadorMinMax():
 
+    def __init__(self):
+
+        self.minimos = list()
+        self.maximos = list()
+        
+    def ajusta(self,X):
+    #Calcular el minimo y maximo de cada atributo y meterlas en una lista 
+        
+       for n_col in range(0,len(X[0])):
+            columna = [fila[n_col] for fila in X]
+            minimo = np.min(columna)
+            maximo = np.max(columna)
+
+            self.minimos.append(minimo)
+            self.maximos.append(maximo)
+            
+
+
+    def normaliza(self,X):
+        
+        if (len(self.maximos) == 0):
+            raise NormalizadorNoAjustado("Error, hay que ajustar antes de normalizar")
+        
+        ##############CAMBIAR ESTO##################
+        '''
+        Hacer las proporciones [(columna - min) / (max - min) creo]
+        Devolver de nuevo el conjunto normalizado'''
+        res = 0
+        return res
 
 
 
