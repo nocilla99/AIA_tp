@@ -25,4 +25,16 @@ def test2_1():
     # normst2=main.NormalizadorStandard()
     # Xte_n=normst2.normaliza(X_test)
 
-test2_1()
+
+def test2_2():
+    X_training,X_test,y_training,y_test = main.particion_entr_prueba(X, y, test)
+    normst=main.NormalizadorMinMax()
+    normst.ajusta(X_training)
+    Xtr_n=normst.normaliza(X_training)
+    Xte_n=normst.normaliza(X_test)
+    print("Media: {} \nDesv Tipic: {}".format(np.average(normst.media), np.average(normst.desv_tipica)))
+    
+    # #Caso para dar el raise
+    # normst2=main.NormalizadorStandard()
+    # Xte_n=normst2.normaliza(X_test)
+test2_2()

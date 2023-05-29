@@ -365,17 +365,9 @@ class NormalizadorMinMax():
         self.maximos = list()
         
     def ajusta(self,X):
-    #Calcular el minimo y maximo de cada atributo y meterlas en una lista 
-        
-       for n_col in range(0,len(X[0])):
-            columna = [fila[n_col] for fila in X]
-            minimo = np.min(columna)
-            maximo = np.max(columna)
-
-            self.minimos.append(minimo)
-            self.maximos.append(maximo)
-            
-
+    #Calcular el minimo y maximo de cada atributo y meterlas en un array 
+        self.minimos = np.min(X,axis=0) 
+        self.maximos = np.max(X,axis=0) 
 
     def normaliza(self,X):
         
@@ -384,9 +376,11 @@ class NormalizadorMinMax():
         
         ##############CAMBIAR ESTO##################
         '''
-        Hacer las proporciones [(columna - min) / (max - min) creo]
+        Hacer las proporciones [(datos - min) / (max - min)]
         Devolver de nuevo el conjunto normalizado'''
-        res = 0
+        self.minimos = np.min(X,axis=0) 
+        self.maximos = np.max(X,axis=0) 
+        res =  (X-self.minimos)/(self.maximos-self.minimos)
         return res
 
 
