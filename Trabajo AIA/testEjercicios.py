@@ -32,9 +32,16 @@ def test2_2():
     normst.ajusta(X_training)
     Xtr_n=normst.normaliza(X_training)
     Xte_n=normst.normaliza(X_test)
-    print("Media: {} \nDesv Tipic: {}".format(np.average(normst.media), np.average(normst.desv_tipica)))
+    print("Minimos: {} \nMaximos: {}".format(np.average(normst.minimos), np.average(normst.maximos)))
     
     # #Caso para dar el raise
     # normst2=main.NormalizadorStandard()
     # Xte_n=normst2.normaliza(X_test)
-test2_2()
+
+
+
+
+
+# test1()
+# test2_1()
+# test2_2()

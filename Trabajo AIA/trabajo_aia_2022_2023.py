@@ -374,23 +374,14 @@ class NormalizadorMinMax():
         if (len(self.maximos) == 0):
             raise NormalizadorNoAjustado("Error, hay que ajustar antes de normalizar")
         
-        ##############CAMBIAR ESTO##################
         '''
         Hacer las proporciones [(datos - min) / (max - min)]
         Devolver de nuevo el conjunto normalizado'''
+
         self.minimos = np.min(X,axis=0) 
         self.maximos = np.max(X,axis=0) 
-        res =  (X-self.minimos)/(self.maximos-self.minimos)
+        res = (X-self.minimos)/(self.maximos-self.minimos)
         return res
-
-
-
-
-
-
-
-
-
 
 # ===========================================
 # EJERCICIO 3: REGRESIÓN LOGÍSTICA MINI-BATCH
@@ -511,10 +502,10 @@ class ClasificadorNoEntrenado(Exception): pass
 # * Definir la función sigmoide usando la función expit de scipy.special, 
 #   para evitar "warnings" por "overflow":
 
-#   from scipy.special import expit    
-#
-#   def sigmoide(x):
-#      return expit(x)
+from scipy.special import expit    
+
+def sigmoide(x):
+    return expit(x)
 
 # * Usar np.where para definir la entropía cruzada. 
 
@@ -536,8 +527,6 @@ class ClasificadorNoEntrenado(Exception): pass
 # >>> lr_cancer.clasifica_prob(Xp_cancer_n[24:27])
 # array([7.44297196e-17, 9.99999477e-01, 1.98547117e-18])
 
-
-
 # Para calcular el rendimiento de un clasificador sobre un conjunto de ejemplos, usar la 
 # siguiente función:
     
@@ -551,9 +540,6 @@ def rendimiento(clasif,X,y):
 
 # >>> rendimiento(lr_cancer,Xp_cancer_n,yp_cancer)
 # 0.9734513274336283
-
-
-
 
 # Ejemplo con salida_epoch y early_stopping:
 
@@ -582,6 +568,90 @@ def rendimiento(clasif,X,y):
 
 
 # -----------------------------------------------------------------
+
+class RegresionLogisticaMiniBatch():
+
+    def __init__(self,rate=0.1,rate_decay=False,n_epochs=100,batch_tam=64):
+        
+        self.rate= rate
+        self.rate_decay = rate_decay
+        self.n_epochs = n_epochs
+        self.batch_tam = batch_tam
+        self.clases = list()
+
+
+
+    def entrena(self,X,y,Xv=None,yv=None,n_epochs=100,salida_epoch=False, early_stopping=False,paciencia=3):
+        self.clases = list(np.unique(y))
+        self.n_epochs = n_epochs
+
+        if(early_stopping):
+            if(yv == None):
+                yv = y
+            if(Xv == None):
+                Xv = X
+
+
+        mejor_entropia = np.Infinity
+        epochs_sin_mejora = 0
+        for i in range(self.n_epochs):
+
+            #para el descenso por gradiente hace falta rate y el gradiente
+            if(self.rate_decay):
+                rate= (rate)*(1/(1+n))
+
+            #TODO parte del gradiente
+
+            if(early_stopping or salida_epoch):
+                ec_Xv = calcula_EC(Xv, yv)
+                
+                #imprimir estadisticas
+
+                if(salida_epoch):
+                    ec_X = calcula_EC(X, y)
+                    rendimiento_X = calculaPrecision(X, y)
+                    rendimiento_Xv = calculaPrecision(Xv, yv)
+
+                    print("EPOCH {}, en entrenamiento EC: {}, rendimiento: {}. \n \ten validación    EC: {},  rendimiento: {}."
+                    .format(np.round(ec_X,5),np.round(rendimiento_X,5),np.round(ec_Xv,5),np.round(rendimiento_Xv,5)))
+                
+                
+                #comprobar si hay mejora o si se ha agotado la paciencia (jajaaa)
+                
+                if ( ec_Xv > mejor_entropia):
+                    epochs_sin_mejora += 1
+
+                    if(epochs_sin_mejora>=paciencia):
+                        break
+                else:
+                    mejor_entropia = ec_Xv
+                    epochs_sin_mejora = 0
+
+     
+    def clasifica_prob(self,ejemplos):
+        pass
+
+
+    def clasifica(self,ejemplo):
+        pass
+
+    pass
+
+def calcula_EC(X,y):
+    predicciones = sigmoide(X)
+    predicciones_clasificadas= np.round(predicciones)
+    #media de las entropias cruzadas de cada ejemplo x
+    # La formula de la ec es (-y * log(X) - (1 - y) * log(1 - X)), pero piden usar where. Habra que hacer las medias de cuando "y[i]" valga 1 y cuando sea 0
+    entropia_cruzada = np.mean(np.where(y == 1, -np.log(predicciones_clasificadas), -np.log(1 - predicciones_clasificadas)))
+
+    return entropia_cruzada
+
+#parecida a la que se da para evaluar un clasificador
+def calculaPrecision(X,y):
+    predicciones = sigmoide(X)
+    predicciones_clasificadas= np.round(predicciones)
+
+    return sum(predicciones_clasificadas == y)/y.shape[0]
 
 
 
@@ -1033,19 +1103,3 @@ def rendimiento(clasif,X,y):
 # --------------------------------------------------------------------
 
 # --------------- 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
