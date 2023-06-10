@@ -25,22 +25,23 @@ class RegresionLogisticaMiniBatch():
         mejor_entropia = np.Infinity
         epochs_sin_mejora = 0
         rate = self.rate
-
+        pesos = np.ones(X.shape[1])
+        
         for i in range(self.n_epochs):
 
             #para el descenso por gradiente hace falta rate y el gradiente
             if(self.rate_decay):
-                rate= (rate)*(1/(1+n))
+                rate= (rate)*(1/(1+self.n_epochs))
 
             #TODO parte del gradiente
 
             if(early_stopping or salida_epoch):
-                ec_Xv = calcula_EC(Xv, yv)
+                ec_Xv = calcula_EC(Xv, yv, pesos)
                 
                 if(salida_epoch):
-                    ec_X = calcula_EC(X, y)
-                    rendimiento_X = calculaPrecision(X, y)
-                    rendimiento_Xv = calculaPrecision(Xv, yv)
+                    ec_X = calcula_EC(X, y, pesos)
+                    rendimiento_X = calculaPrecision(X, y, pesos)
+                    rendimiento_Xv = calculaPrecision(Xv, yv, pesos)
 
                     print("EPOCH {}, en entrenamiento EC: {}, rendimiento: {}. \n \ten validación    EC: {},  rendimiento: {}."
                     .format(np.round(ec_X,5),np.round(rendimiento_X,5),np.round(ec_Xv,5),np.round(rendimiento_Xv,5)))
@@ -65,8 +66,8 @@ class RegresionLogisticaMiniBatch():
 
     pass
 
-def calcula_EC(X,y):
-    predicciones = sigmoide(X)
+def calcula_EC(X,y,pesos):
+    predicciones = sigmoide(np.dot(X,pesos))
     predicciones_clasificadas= np.round(predicciones)
     #media de las entropias cruzadas de cada ejemplo x
     # La formula de la ec es (-y * log(X) - (1 - y) * log(1 - X)), pero piden usar where. Habra que hacer las medias de cuando "y[i]" valga 1 y cuando sea 0
@@ -75,8 +76,8 @@ def calcula_EC(X,y):
     return entropia_cruzada
 
 #parecida a la que se da para evaluar un clasificador
-def calculaPrecision(X,y):
-    predicciones = sigmoide(X)
+def calculaPrecision(X,y, pesos):
+    predicciones = sigmoide(np.dot(X,pesos))
     predicciones_clasificadas= np.round(predicciones)
 
     return sum(predicciones_clasificadas == y)/y.shape[0]
