@@ -38,6 +38,11 @@ def test2_2():
     # normst2=main.NormalizadorStandard()
     # Xte_n=normst2.normaliza(X_test)
 
+def test4():
+    params = {"batch_tam":10,"rate":0.1,"rate_decay":False}
+    rend = main.rendimiento_validacion_cruzada(main.RegresionLogisticaMiniBatch, params,X,y, n = 5)
+    print("Rendimineto: ",rend)
+
 
 
 
@@ -45,3 +50,4 @@ def test2_2():
 # test1()
 # test2_1()
 # test2_2()
+test4()

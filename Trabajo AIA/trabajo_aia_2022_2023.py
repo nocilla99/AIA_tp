@@ -569,6 +569,27 @@ def rendimiento(clasif,X,y):
 
 # -----------------------------------------------------------------
 
+'''''
+Algoritmo de descenso por el gradiente(version mini-batch): 
+
+•Inicializar los pesos(w0,...,wn) aleatoriamente 
+•Para cada epoch: 
+    •Dividir aleatoriamente los ejemplos de entrenamiento en grupos de P ejemplos(mini-batches): 
+    •Para cada mini-batch B actualizar cada los pesos: 
+       wi ← wi + η*sum j∈B( [(y(j) − σ(w*x(j)))x_i(j)])
+
+El proceso de entrenamiento del clasificador lineal basado en regresión logística (mini-batch) implica los siguientes pasos:
+
+1 - Inicialización de los pesos y el sesgo (bias) del modelo.
+2 - División aleatoria del conjunto de entrenamiento en mini-batches.
+3 - Iteración sobre cada mini-batch y actualización de los pesos y bias utilizando el gradiente descendente 
+    para minimizar la función de costo (la entropía cruzada).
+4 - Repetición de los pasos 2 y 3 durante un número fijo de epochs.
+5 - Evaluación del rendimiento del modelo en un conjunto de validación .
+
+'''
+
+
 class RegresionLogisticaMiniBatch():
 
     def __init__(self,rate=0.1,rate_decay=False,n_epochs=100,batch_tam=64):
@@ -578,9 +599,105 @@ class RegresionLogisticaMiniBatch():
         self.n_epochs = n_epochs
         self.batch_tam = batch_tam
         self.clases = list()
+        self.weight = None
+        # parametro importatnte permite al modelo ajustar el imbral de decision es decir se utiliza para
+        # desplazar la funcion de decsicion hacia arriba o hacia abajo ...
+        self.bias  = None
+  
+
+    # funcion auxliar para incilizar pesos aleatoriamente 
+    # y los bias en 0 porque en principio no tiene prefrencia hacia una clase en particular
+    def inicializar_pesos(self, n_carac):
+        self.weight = np.random.randn(n_carac,1)
+        self.bias = 0
+        return self.weight, self.bias
+
+    def entropia_cruzada(self, X,y,reg_lambda):
+      
+        y_pred = self.clasifica_prob(X)
+        # selecciona los elementos correspondientes a la clase positiva y calcula el logaritmo de las probabilidades de prediccion 
+        # para esos elementos, y también calcula el logaritmo de las probabilidades complementarias 
+        # para los elementos correspondientes a la clase negativa.
+        coste = np.sum(np.where(y == 1, -np.log(y_pred), -np.log(1 - y_pred)))
+        regularizacion = (reg_lambda / 2)*np.sum(self.weight**2)
+        coste += regularizacion
+        return coste 
+    
+    # HE HECHO ESTA FUNCION PORQUE LA FUNCION QUE ESTA EN EL ANUNCIADO ME DEVUELVE UN RENDIMIENTO CON UNA LISTA DE NUMEROS 
+    # EN VEZ DE UN NUMERO SOLO AL EJECUTAR EL EJERICCIO 4
+    def rendimiento(self, X, y):
+        predicciones = self.clasifica(X)
+        aciertos = (predicciones == y).sum()
+        precision = aciertos / y.shape[0]
+        return precision
+    
+    # HE UTILIZADO CASI LO MISMO QUE EL TUYO CAMBIANDO ALGUNAS COSAS PORQUE HE AÑADIDO UNA FUNCION AUXILIAR QUE 
+    # ES entropia_cruzada , rendimiento  y inicializar_pesos 
+    def entrena(self,X,y,Xv=None,yv=None,n_epochs=100,salida_epoch=False, early_stopping=False,paciencia=3):
+       self.clases = list(np.unique(y))
+
+       if(early_stopping):
+            if(yv == None):
+                yv = y
+            if(Xv == None):
+                Xv = X
+
+       mejor_entropia = np.Infinity
+       epochs_sin_mejora = 0
+       rate = self.rate
+       # INICIALIZA LOS PESOS
+       self.weight , self.bias = self.inicializar_pesos(X.shape[1])
+       
+       for epoch in range(self.n_epochs):
+
+            #para el descenso por gradiente hace falta rate y el gradiente
+            if(self.rate_decay):
+                rate = (rate)*(1/( 1 + self.n_epochs))
+
+            #TODO parte del gradiente
+
+            if(early_stopping or salida_epoch):
+                ec_Xv = self.entropia_cruzada(Xv, yv)
+                
+                if(salida_epoch):
+                    ec_X = self.entropia_cruzada(Xv, yv)
+                    rendimiento_X = self.rendimiento(X, y)
+                    rendimiento_Xv = self.rendimiento(Xv, yv)
+                    print(f"Epoch {epoch}, en entrenamiento EC: {ec_X}, rendimiento: {rendimiento_X}.")
+                    print(f"         en validación    EC: {ec_Xv}, rendimiento: {rendimiento_Xv}.")
+                else : 
+                    if ( ec_Xv > mejor_entropia):
+                        epochs_sin_mejora += 1
+
+                        if(epochs_sin_mejora>=paciencia):
+                            print("PARADA TEMPRANA")
+                            break
+                    else:
+                        mejor_entropia = ec_Xv
+                        epochs_sin_mejora = 0
+
+    def clasifica_prob(self,ejemplos):
+        if self.weight is None or self.bias is None:
+            raise ClasificadorNoEntrenado("El clasificador no ha sido entrenado.")
+        self.weight = self.weight.astype(float)
+        self.bias = float(self.bias)
+        # vector z que contiene la uncion lineal para cada ejemplo despues de multiplicarle con su peso y le suma el sesgo
+        z = np.dot(ejemplos, self.weight) + self.bias
+        # al aplicar el sigmoide al vector z nos sale las probalidades de prediccion de cada ejemplo X
+        return sigmoide(z)
+
+
+    def clasifica(self,ejemplo):
+        probabilidad = self.clasifica_prob(ejemplo)
+        # entonces ahora despues de obtener la probadlidad asignamos que si la prob >= 0.5 enonces su clasificacion 1
+        # sino le asiganmos una clasificacion 0
+        return np.where(probabilidad >= 0.5, self.clases[1], self.clases[0])
 
 
 
+# PARTE DANI
+
+'''''
     def entrena(self,X,y,Xv=None,yv=None,n_epochs=100,salida_epoch=False, early_stopping=False,paciencia=3):
         self.clases = list(np.unique(y))
         self.n_epochs = n_epochs
@@ -625,17 +742,10 @@ class RegresionLogisticaMiniBatch():
                     else:
                         mejor_entropia = ec_Xv
                         epochs_sin_mejora = 0
-        
-     
-    def clasifica_prob(self,ejemplos):
-        pass
+ '''   
 
 
-    def clasifica(self,ejemplo):
-        pass
-
-    pass
-
+''''' 
 def calcula_EC(X,y,pesos):
     predicciones = sigmoide(np.dot(X,pesos))
     predicciones_clasificadas= np.round(predicciones)
@@ -651,34 +761,10 @@ def calculaPrecision(X,y, pesos):
     predicciones_clasificadas= np.round(predicciones)
 
     return sum(predicciones_clasificadas == y)/y.shape[0]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+'''
 
 
 # ------------------------------------------------------------------------------
-
-
 
 
 
@@ -733,6 +819,7 @@ def calculaPrecision(X,y, pesos):
 
 
 
+
 # El resultado es la media de rendimientos obtenidos entrenando cada vez con
 # todas las particiones menos una, y probando el rendimiento con la parte que
 # se ha dejado fuera. Las particiones DEBEN SER ALEATORIAS Y ESTRATIFICADAS. 
@@ -752,19 +839,36 @@ def calculaPrecision(X,y, pesos):
 #------------------------------------------------------------------------------
 
 
+def rendimiento_validacion_cruzada(clase_clasificador,params,X,y,Xv=None,yv=None,n=5):
+    # hemos usado permutation porque no afecta al orden original del conjunto de datos sino crea un array nuevo y lo altera
+    particiones = np.array_split(np.random.permutation(range(len(X))), n)
+    # para almacenar el rendimiento de cada iteracion en la valid_cruz
+    rends = []
 
+    for i in range(n):
+        # aprovechando del ej1 dividimos el conjunto de datos en tranining y validacion aleatoriamente
+        #X_training,Xv,y_training,yv = particion_entr_prueba(X,y, test=1/n)
+        
+        indices_entrenamiento = np.concatenate([particiones[j] for j in range(n) if j != i])
+        indices_validacion = particiones[i]
+        
+        X_training = X[indices_entrenamiento]
+        y_training = y[indices_entrenamiento]
+        X_validacion = X[indices_validacion]
+        y_validacion = y[indices_validacion]
 
+        # entrenamos los datos de training
+        clasificador = clase_clasificador(**params)
+        clasificador.entrena(X_training,y_training)
 
+        # evaluamos el rendimineto de los daots de validacion
+        rend = clasificador.rendimiento(X_validacion, y_validacion)
+        rends.append(rend)
+        print(f"Partición {i+1}. Rendimiento: {rend}")
 
-
-
-
-
-
-
-
-
-
+    # rendimiento medio entre todos los rendimintos
+    rend_med = np.mean(rends)
+    return rend_med
 
 
 # ===================================================
@@ -795,7 +899,7 @@ def calculaPrecision(X,y, pesos):
 # ----------------------------
 
 
-
+# AQUI DEPENDE A LOS RESULTADOS DEL EJRICCIOS 4 HASTA QUE NO TENGAMOS BIEN NO PUEDO HACERLO
 
 
 
@@ -867,7 +971,63 @@ def calculaPrecision(X,y, pesos):
 # --------------------------------------------------------------------
 
 
+class RL_OvR():
 
+     def __init__(self,rate=0.1,rate_decay=False,
+                   batch_tam=64):
+        self.rate = rate
+        self.rate_decay = rate_decay
+        self.batch_tam = batch_tam
+        # diccionario para almacenar los clasificadores binarios
+        self.dic_clasifi = {}
+    
+     def inicializar_pesos(self, n_carac):
+        # no he puesto self aqui porque cuando utliza la clase de RegresionLogisticaMiniBatch y de ello
+        # llama a la funcion inicializar_pesos para obtener los pessos y las bias iniciales estos valores iniciales se asignan
+        # directamente a los atributos weight y bias aqui
+        weight = np.random.randn(n_carac,1)
+        bias = 0
+        return weight, bias
+
+     def entrena(self,X,y,n_epochs=100,salida_epoch=False):
+         self.clases = np.unique(y)
+
+        # para cada clase se crea un clasificador binario utilizando la clase RegresionLogisticaMiniBatch
+        # 'y' se conveirta en un victor binario donde los elementos que corresponde a la clase actual son 1 y el resto 0 
+         for clase in self.clases:
+            y_binario = np.where(y == clase, 1, 0)
+
+            clasifi = RegresionLogisticaMiniBatch(rate=self.rate, rate_decay=self.rate_decay, batch_tam=self.batch_tam)
+            clasifi.entrena(X,y_binario, n_epochs=n_epochs, salida_epoch=salida_epoch)
+
+            # clave = la clse
+            # valor = clasificador binario de esa clase
+            self.dic_clasifi[clase] = clasifi
+
+
+    # realizamos la clasificacion para los nuevos ejemplos
+     def clasifica(self,ejemplos):
+
+        y_predicion = []
+
+        # para cada ejemplo cogemos la probalidad de partenencia a cada clase
+        # cogemos la mayor probalidad y se almacena en la lista y_prediccion
+        for ejemplo in ejemplos:
+            max_prob = -1
+            clase_predicido = None
+
+            for clase, clasifi in self.dic_clasifi.items():
+                prob = clasifi.clasifica_prob([ejemplo])[0]
+
+                if prob > max_prob:
+                    max_prob = prob
+                    clase_predicido = clase
+
+            y_predicion.append(clase_predicido)
+        
+        return y_predicion
+
+    
 
 
 
