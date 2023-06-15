@@ -2,8 +2,8 @@ import trabajo_aia_2022_2023 as main
 import numpy as np
 import carga_datos as cd
 
-X = cd.X_votos
-y= cd.y_votos
+X = cd.X_iris
+y= cd.y_iris
 test = round(np.random.random(),3)
 
 def test1():
@@ -38,10 +38,54 @@ def test2_2():
     # normst2=main.NormalizadorStandard()
     # Xte_n=normst2.normaliza(X_test)
 
+def test3():
+    cancer = main.RegresionLogisticaMiniBatch(rate=0.1,rate_decay=True)
+    cancer.entrena(X=X,y=y,salida_epoch=True)
+    rend = main.rendimiento(cancer,X,y)
+    print("Rendimeinto :",rend)
+
+
+
+
 def test4():
     params = {"batch_tam":10,"rate":0.1,"rate_decay":False}
     rend = main.rendimiento_validacion_cruzada(main.RegresionLogisticaMiniBatch, params,X,y, n = 5)
     print("Rendimineto: ",rend)
+
+
+def test7():
+
+    Xc=np.array([["a",1,"c","x"],
+                  ["b",2,"c","y"],
+                  ["c",1,"d","x"],
+                  ["a",2,"d","z"],
+                  ["c",1,"e","y"],
+                  ["c",2,"f","y"]])
+    codifi_X = main.codifica_one_hot(Xc)
+
+    print("La codificacion es: ",codifi_X)
+
+def test8_1():
+
+    codifica_x = main.codifica_one_hot(X)
+    credito = main.RL_OvR(rate=0.1, rate_decay=False, batch_tam=64)
+    credito.entrena(codifica_x,y, n_epochs=100,salida_epoch=False)
+
+    nuev_ej = np.array([[0,1,0,0,1,1,0,0,1,0,1,0,0]])
+    pred = credito.clasifica(nuev_ej)
+
+    print("Predicciones: ",pred)
+
+def test_OP():
+    print("Codifi: ",main.codifica_one_hot(y))
+    print(X)
+    #parm = {"batch_tam":8,"rate":0.1,"rate_decay":False}
+    #rend_valid = main.rendimiento_validacion_cruzada(main.RL_Multinomial,parm,X,y,n=5)
+    #print(rend_valid)
+    iris = main.RL_Multinomial(rate=0.1,batch_tam=8,rate_decay=False)
+    iris.entrena(X, y,n_epochs=2, salida_epoch=True)
+    rend = main.rendimiento(iris, X, y)
+    print("Rendimiento: ", rend)
 
 
 
@@ -50,4 +94,8 @@ def test4():
 # test1()
 # test2_1()
 # test2_2()
-test4()
+test3()
+# test4()
+# test7()
+
+# test_OP()

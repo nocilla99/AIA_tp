@@ -239,9 +239,9 @@ def particion_entr_prueba(X,y,test):
     '''
 
     ind_tr, ind_te = separar_clases_test_training(y, test)
-    X_training,y_training = [ X[i]for i in ind_tr] , [y[i] for i in ind_tr]
+    X_training,y_training = np.array([ X[i]for i in ind_tr] ), np.array([y[i] for i in ind_tr])
 
-    X_test,y_test = [ X[i] for i in ind_te] , [y[i] for i in ind_te]
+    X_test,y_test = np.array([ X[i] for i in ind_te]) , np.array([y[i] for i in ind_te])
     return X_training,X_test,y_training,y_test
 
 
@@ -609,7 +609,7 @@ class RegresionLogisticaMiniBatch():
     # y los bias en 0 porque en principio no tiene prefrencia hacia una clase en particular
     def inicializar_pesos(self, n_carac):
         self.weight = np.random.randn(n_carac,1)
-        self.bias = 0
+        self.bias = np.random.randn()
         return self.weight, self.bias
 
     def entropia_cruzada(self, X,y,reg_lambda):
@@ -648,19 +648,34 @@ class RegresionLogisticaMiniBatch():
        # INICIALIZA LOS PESOS
        self.weight , self.bias = self.inicializar_pesos(X.shape[1])
        
-       for epoch in range(self.n_epochs):
+       for epoch in range(n_epochs):
 
             #para el descenso por gradiente hace falta rate y el gradiente
             if(self.rate_decay):
-                rate = (rate)*(1/( 1 + self.n_epochs))
+                rate = (rate)*(1/( 1 + n_epochs))
+
+            altera = np.random.permutation(X.shape[0])
+            X = X[altera]
+            y = y[altera]
+
+            for i in range(0, X.shape[0], self.batch_tam):
+                conjunto_x = X[i:i + self.batch_tam]
+                conjunto_y = y[i:i + self.batch_tam].reshape(-1,1)
+
+                y_pred = self.clasifica_prob(conjunto_x)
+                # he utlizado la traspuesta de la matriz poque al final del bucle tenemos conjunto_x de dimension (batch_tam, num_carac)
+                # y (conjunto_y - y_pred) es deminsion (batch_tam,1) entonces al aplicar la traspuesta seria la dimension
+                # de conjunto_x (num_carac , batch_tam) y asi podemos hacer la multiplicacion
+                self.weight -= rate * np.dot(conjunto_x.T , (conjunto_y - y_pred))
+                self.bias -= rate * np.sum(conjunto_y - y_pred)
 
             #TODO parte del gradiente
 
             if(early_stopping or salida_epoch):
-                ec_Xv = self.entropia_cruzada(Xv, yv)
+                ec_Xv = self.entropia_cruzada(Xv, yv,0.1)
                 
                 if(salida_epoch):
-                    ec_X = self.entropia_cruzada(Xv, yv)
+                    ec_X = self.entropia_cruzada(Xv, yv,0.1)
                     rendimiento_X = self.rendimiento(X, y)
                     rendimiento_Xv = self.rendimiento(Xv, yv)
                     print(f"Epoch {epoch}, en entrenamiento EC: {ec_X}, rendimiento: {rendimiento_X}.")
@@ -679,19 +694,21 @@ class RegresionLogisticaMiniBatch():
     def clasifica_prob(self,ejemplos):
         if self.weight is None or self.bias is None:
             raise ClasificadorNoEntrenado("El clasificador no ha sido entrenado.")
-        self.weight = self.weight.astype(float)
-        self.bias = float(self.bias)
         # vector z que contiene la uncion lineal para cada ejemplo despues de multiplicarle con su peso y le suma el sesgo
+   
+        self.weight = self.weight.astype(np.float64)
+      
         z = np.dot(ejemplos, self.weight) + self.bias
         # al aplicar el sigmoide al vector z nos sale las probalidades de prediccion de cada ejemplo X
-        return sigmoide(z)
+        y_pred = sigmoide(z)
+        return y_pred.reshape(-1,1)
 
 
     def clasifica(self,ejemplo):
         probabilidad = self.clasifica_prob(ejemplo)
         # entonces ahora despues de obtener la probadlidad asignamos que si la prob >= 0.5 enonces su clasificacion 1
         # sino le asiganmos una clasificacion 0
-        return np.where(probabilidad >= 0.5, self.clases[1], self.clases[0])
+        return np.where(probabilidad >= 0.5, self.clases[1], self.clases[0]).flatten()
 
 
 
@@ -862,7 +879,7 @@ def rendimiento_validacion_cruzada(clase_clasificador,params,X,y,Xv=None,yv=None
         clasificador.entrena(X_training,y_training)
 
         # evaluamos el rendimineto de los daots de validacion
-        rend = clasificador.rendimiento(X_validacion, y_validacion)
+        rend = rendimiento(clasificador,X_validacion, y_validacion)
         rends.append(rend)
         print(f"Partición {i+1}. Rendimiento: {rend}")
 
@@ -1029,12 +1046,6 @@ class RL_OvR():
 
     
 
-
-
-
-
-
-
             
 # --------------------------------
 
@@ -1106,8 +1117,24 @@ class RL_OvR():
 # -------- 
 
 
+def codifica_one_hot(X):
 
+    unique_values = np.unique(X)
+    num_filas = X.shape[0]
+    num_columnas = len(unique_values)
 
+    # creamos una matriz de ceros con las dimensiones num_filas(que son las mismas filas de X) 
+    # y num_columnas (que son igual al numeros de elementos difrentes de X)
+    codifica_X = np.zeros((num_filas,num_columnas))
+
+    for i , value in enumerate(unique_values):
+        # creamos m para saber las posiciones de cada valor en unique_values en X, es decir donde los elementos de X igual a value es True
+        # y donde no son es False 
+        m = X == value 
+        # con m podemos seleccionar las filas en codifica_X y i para seleccionar las columnas en la que debemos asignar 1 en codifica_X
+        codifica_X[np.where(m),i] = 1
+
+    return codifica_X
 
 
 
@@ -1261,3 +1288,65 @@ class RL_OvR():
 # --------------------------------------------------------------------
 
 # --------------- 
+
+
+
+
+import numpy as np
+from scipy.special import softmax
+
+class RL_Multinomial():
+    def __init__(self, rate=0.1, rate_decay=False, batch_tam=64):
+        self.rate = rate
+        self.rate_decay = rate_decay
+        self.batch_tam = batch_tam
+        self.weights = None
+
+    def entrena(self, X, y, n_epochs=100, salida_epoch=False):
+        # Inicilizamos los pesos
+        n_clases = len(np.unique(y))
+        n_carac = X.shape[1]
+        # una mtriz de pesos para multiples clases
+        self.weights = np.random.randn(n_clases, n_carac)
+
+        # 
+        for epoch in range(n_epochs):
+            if self.rate_decay:
+                rate = (self.rate)*(1/( 1 + n_epochs))
+            else:
+                rate = self.rate
+
+            altera = np.random.permutation(X.shape[0])
+            X_altera = X[altera]
+            y_altera = y[altera]
+
+            for i in range(0, X.shape[0], self.batch_tam):
+                conjunto_X = X_altera[i:i+self.batch_tam]
+                conjunto_y = y_altera[i:i+self.batch_tam]
+                gradients = self.calcular_gradientes(conjunto_X, conjunto_y)
+                self.weights -= rate * gradients
+
+            if salida_epoch:
+                loss = self.calcular_entropia_cruzada(X, y,0)
+                print(f"Epoch {epoch+1}/{n_epochs} - Loss: {loss}")
+
+
+    # 
+    def calcular_entropia_cruzada(self, X, y,reg_lambda):
+        m = codifica_one_hot(y)  # Codificación one-hot de las etiquetas verdaderas
+        y_pred = self.clasifica_prob(X)  # Probabilidades predichas utilizando softmax
+        coste = -np.sum(np.dot(m.T , np.log(y_pred)))  # Suma de los términos de la entropía cruzada
+        regularizacion = (reg_lambda)*np.sum(self.weights)
+        coste += regularizacion
+        return coste  
+
+    def clasifica_prob(self, ejemplos):
+
+        z = np.dot(ejemplos, self.weights.T)
+        y_pred = softmax(z)
+        return y_pred
+
+    def clasifica(self, ejemplos):
+        prob = self.clasifica_prob(ejemplos)
+        return np.argmax(prob, axis=1)
+
