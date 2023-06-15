@@ -1,9 +1,9 @@
 import trabajo_aia_2022_2023 as main
 import numpy as np
 import carga_datos as cd
-
-X = cd.X_iris
-y= cd.y_iris
+import pruebasdani as pd
+X = cd.X_votos
+y= cd.y_votos
 test = round(np.random.random(),3)
 
 def test1():
@@ -48,9 +48,21 @@ def test3():
 
 
 def test4():
-    params = {"batch_tam":10,"rate":0.1,"rate_decay":False}
-    rend = main.rendimiento_validacion_cruzada(main.RegresionLogisticaMiniBatch, params,X,y, n = 5)
-    print("Rendimineto: ",rend)
+    X_training,X_test,y_training,y_test = main.particion_entr_prueba(X, y, 0.3)
+    X_training,X_v = X_training[:len(X_training)-50] , X_training[len(X_training)-50:]
+    y_training,y_v = y_training[:len(y_training)-50] , y_training[len(y_training)-50:]
+    modelo = pd.RegresionLogisticaMiniBatch(0.05,n_epochs=100,batch_tam=16)
+    modelo.entrena(X_training,y_training,None,None,50,True,True,3)
+
+    # array_predicciones = modelo.clasifica(X_test)
+    # array_predicciones = modelo.clasifica_prob(array_predicciones)
+
+    # print(main.rendimiento(modelo,X_test,y_test))
+    
+def test4_2():
+    X_training,X_test,y_training,y_test = main.particion_entr_prueba(X, y, 0.3)
+
+
 
 
 def test7():
