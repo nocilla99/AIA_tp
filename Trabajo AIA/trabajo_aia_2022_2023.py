@@ -1172,7 +1172,7 @@ def codifica_one_hot(X):
 
 
 # ---------------------------------------------------------
-# 7.2) Clasificación de imágenes de dígitos escritos a mano
+# 8.2) Clasificación de imágenes de dígitos escritos a mano
 # ---------------------------------------------------------
 
 

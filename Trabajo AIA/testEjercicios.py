@@ -58,9 +58,7 @@ def test4():
     # array_predicciones = modelo.clasifica_prob(array_predicciones)
 
     # print(main.rendimiento(modelo,X_test,y_test))
-    
-def test4_2():
-    X_training,X_test,y_training,y_test = main.particion_entr_prueba(X, y, 0.3)
+
 
 
 
