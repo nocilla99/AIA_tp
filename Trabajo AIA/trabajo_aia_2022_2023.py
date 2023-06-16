@@ -608,79 +608,106 @@ class RegresionLogisticaMiniBatch():
     # funcion auxliar para incilizar pesos aleatoriamente 
     # y los bias en 0 porque en principio no tiene prefrencia hacia una clase en particular
     def inicializar_pesos(self, n_carac):
-        self.weight = np.random.randn(n_carac,1)
-        self.bias = np.random.randn()
+        self.weight = np.random.uniform(low=-0.2, high=0.2,size=(n_carac,1))
+        self.bias = 0
         return self.weight, self.bias
 
-    def entropia_cruzada(self, X,y,reg_lambda):
-      
-        y_pred = self.clasifica_prob(X)
-        # selecciona los elementos correspondientes a la clase positiva y calcula el logaritmo de las probabilidades de prediccion 
-        # para esos elementos, y también calcula el logaritmo de las probabilidades complementarias 
-        # para los elementos correspondientes a la clase negativa.
-        coste = np.sum(np.where(y == 1, -np.log(y_pred), -np.log(1 - y_pred)))
-        regularizacion = (reg_lambda / 2)*np.sum(self.weight**2)
+    def entropia_cruzada(self, X,y):
+        
+        # predicciones = sigmoide(np.dot(X,self.weight)+self.bias)
+
+        prod_escalares = [np.dot(fila, self.weight)[0] + self.bias for fila in X]
+        predicciones = sigmoide(prod_escalares)
+
+        #suma de las entropias cruzadas de cada ejemplo x
+        # La formula de la ec es (-y * log(pred) - (1 - y) * log(1 - pred)), pero piden usar where. Habra que hacer las medias de cuando "y[i]" valga 1. y cuando sea 0.
+        array_entropias = [np.where(y[i]==1, -np.log(np.maximum(predicciones[i], 000.1)), -np.log(np.maximum(1-predicciones[i], 000.1))) for i in range(0,len(predicciones))]
+        coste = np.sum(array_entropias) 
+
+        regularizacion = 2*np.sum(self.weight**2)
+
         coste += regularizacion
-        return coste 
+        return coste / len(array_entropias)
     
-    # HE HECHO ESTA FUNCION PORQUE LA FUNCION QUE ESTA EN EL ANUNCIADO ME DEVUELVE UN RENDIMIENTO CON UNA LISTA DE NUMEROS 
-    # EN VEZ DE UN NUMERO SOLO AL EJECUTAR EL EJERICCIO 4
-    def rendimiento(self, X, y):
-        predicciones = self.clasifica(X)
-        aciertos = (predicciones == y).sum()
-        precision = aciertos / y.shape[0]
-        return precision
     
     # HE UTILIZADO CASI LO MISMO QUE EL TUYO CAMBIANDO ALGUNAS COSAS PORQUE HE AÑADIDO UNA FUNCION AUXILIAR QUE 
     # ES entropia_cruzada , rendimiento  y inicializar_pesos 
     def entrena(self,X,y,Xv=None,yv=None,n_epochs=100,salida_epoch=False, early_stopping=False,paciencia=3):
-       self.clases = list(np.unique(y))
 
-       if(early_stopping):
-            if(yv == None):
-                yv = y
-            if(Xv == None):
-                Xv = X
+        self.clases, y = procesar_y(list(np.unique(y)), y)
+        self.n_epochs = n_epochs
 
-       mejor_entropia = np.Infinity
-       epochs_sin_mejora = 0
-       rate = self.rate
-       # INICIALIZA LOS PESOS
-       self.weight , self.bias = self.inicializar_pesos(X.shape[1])
-       
-       for epoch in range(n_epochs):
+        #normalizar datos entradas
+        norm = NormalizadorStandard()
+        norm.ajusta(X)
+        X = norm.normaliza(X)
+        
 
-            #para el descenso por gradiente hace falta rate y el gradiente
+        if(Xv is None or yv is None):
+            yv = y
+            Xv = X
+        else :    
+            norm.ajusta(Xv)
+            Xv = norm.normaliza(Xv)
+            _, yv = procesar_y(list(np.unique(yv)), yv)
+        
+        
+
+        mejor_entropia = np.Infinity
+        epochs_sin_mejora = 0
+        rate = self.rate
+        # INICIALIZA LOS PESOS
+        self.weight , self.bias = self.inicializar_pesos(X.shape[1])
+        
+        #Separar en batchs        
+        X_partes = [X[i:i + self.batch_tam] for i in range(0, len(X), self.batch_tam)]
+        y_partes = [y[i:i + self.batch_tam] for i in range(0, len(y), self.batch_tam)]
+
+        for epoch in range(self.n_epochs):
+
             if(self.rate_decay):
-                rate = (rate)*(1/( 1 + n_epochs))
+                rate = (rate)*(1/( 1 + self.n_epochs))
 
-            altera = np.random.permutation(X.shape[0])
-            X = X[altera]
-            y = y[altera]
+            #parte de minibatch
+            for i in range(len(self.weight)):
+                
+                for minibatch in range(len(X_partes)):
+                    suma = 0
+                    suma_bias = 0
+                    
+                    conjunto_x = X_partes[minibatch]
+                    conjunto_y = y_partes[minibatch]
+                    
+                    # tamaños = np.unique([len(X_partes[z]) for z in range(0,len(X_partes))])
 
-            for i in range(0, X.shape[0], self.batch_tam):
-                conjunto_x = X[i:i + self.batch_tam]
-                conjunto_y = y[i:i + self.batch_tam].reshape(-1,1)
+                    #wi ← wi + η*sum j∈B( [(y(j) − σ(w*x(j)))x_i(j)])
 
-                y_pred = self.clasifica_prob(conjunto_x)
-                # he utlizado la traspuesta de la matriz poque al final del bucle tenemos conjunto_x de dimension (batch_tam, num_carac)
-                # y (conjunto_y - y_pred) es deminsion (batch_tam,1) entonces al aplicar la traspuesta seria la dimension
-                # de conjunto_x (num_carac , batch_tam) y asi podemos hacer la multiplicacion
-                self.weight -= rate * np.dot(conjunto_x.T , (conjunto_y - y_pred))
-                self.bias -= rate * np.sum(conjunto_y - y_pred)
+                    for j in range(len(conjunto_x)):
+                        aux = np.dot(conjunto_x[j], self.weight) + self.bias
+                        calculo = (conjunto_y[j] - sigmoide(aux[0])) * conjunto_x[j][i]
+                        suma += calculo
+                        #el error de prediccion
+                        suma_bias += sigmoide(aux[0]) - conjunto_y[j]
 
-            #TODO parte del gradiente
+                    self.weight[i] += rate*suma
+                    self.bias -= suma_bias
 
             if(early_stopping or salida_epoch):
-                ec_Xv = self.entropia_cruzada(Xv, yv,0.1)
+
+                ec_Xv = self.entropia_cruzada(Xv, yv)
                 
                 if(salida_epoch):
-                    ec_X = self.entropia_cruzada(Xv, yv,0.1)
-                    rendimiento_X = self.rendimiento(X, y)
-                    rendimiento_Xv = self.rendimiento(Xv, yv)
-                    print(f"Epoch {epoch}, en entrenamiento EC: {ec_X}, rendimiento: {rendimiento_X}.")
+                    
+                    ec_X = self.entropia_cruzada(X, y)
+                    
+                    rendimiento_X = self.rendimiento(X,y)
+                    
+                    rendimiento_Xv = self.rendimiento(Xv,yv)
+
+                    print(f"Epoch {epoch +1}, en entrenamiento EC: {ec_X}, rendimiento: {rendimiento_X}.")
                     print(f"         en validación    EC: {ec_Xv}, rendimiento: {rendimiento_Xv}.")
-                else : 
+
+                if(early_stopping): 
                     if ( ec_Xv > mejor_entropia):
                         epochs_sin_mejora += 1
 
@@ -694,91 +721,31 @@ class RegresionLogisticaMiniBatch():
     def clasifica_prob(self,ejemplos):
         if self.weight is None or self.bias is None:
             raise ClasificadorNoEntrenado("El clasificador no ha sido entrenado.")
-        # vector z que contiene la uncion lineal para cada ejemplo despues de multiplicarle con su peso y le suma el sesgo
-   
-        self.weight = self.weight.astype(np.float64)
-      
-        z = np.dot(ejemplos, self.weight) + self.bias
-        # al aplicar el sigmoide al vector z nos sale las probalidades de prediccion de cada ejemplo X
-        y_pred = sigmoide(z)
-        return y_pred.reshape(-1,1)
+        
+        # vector z que contiene la union lineal para cada ejemplo despues de multiplicarle con su peso y le suma el sesgo
+        z = [np.dot(fila, self.weight)[0] + self.bias for fila in ejemplos]
+        # despues de aplicarle el sigmoide al vector z nos sale las probalidades de prediccion de cada ejemplo X
+        predicciones = sigmoide(z) 
+        return predicciones
 
 
     def clasifica(self,ejemplo):
         probabilidad = self.clasifica_prob(ejemplo)
         # entonces ahora despues de obtener la probadlidad asignamos que si la prob >= 0.5 enonces su clasificacion 1
         # sino le asiganmos una clasificacion 0
-        return np.where(probabilidad >= 0.5, self.clases[1], self.clases[0]).flatten()
+        return np.where(probabilidad > 0.5, self.clases[1], self.clases[0])
 
+    def rendimiento(self, X, y):
+        predicciones = self.clasifica(X)
+        aciertos = (predicciones == y).sum()
+        precision = aciertos / y.shape[0]
+        return precision
 
-
-# PARTE DANI
-
-'''''
-    def entrena(self,X,y,Xv=None,yv=None,n_epochs=100,salida_epoch=False, early_stopping=False,paciencia=3):
-        self.clases = list(np.unique(y))
-        self.n_epochs = n_epochs
-
-        if(early_stopping):
-            if(yv == None):
-                yv = y
-            if(Xv == None):
-                Xv = X
-
-
-        mejor_entropia = np.Infinity
-        epochs_sin_mejora = 0
-        rate = self.rate
-        pesos = np.ones(X.shape[1])
-
-        for i in range(self.n_epochs):
-
-            #para el descenso por gradiente hace falta rate y el gradiente
-            if(self.rate_decay):
-                rate= (rate)*(1/(1+self.n_epochs))
-
-            #TODO parte del gradiente
-
-            if(early_stopping or salida_epoch):
-                ec_Xv = calcula_EC(Xv, yv, pesos)
-                
-                if(salida_epoch):
-                    ec_X = calcula_EC(X, y, pesos)
-                    rendimiento_X = calculaPrecision(X, y, pesos)
-                    rendimiento_Xv = calculaPrecision(Xv, yv, pesos)
-
-                    print("EPOCH {}, en entrenamiento EC: {}, rendimiento: {}. \n \ten validación    EC: {},  rendimiento: {}."
-                    .format(np.round(ec_X,5),np.round(rendimiento_X,5),np.round(ec_Xv,5),np.round(rendimiento_Xv,5)))
-                
-                else : 
-                    if ( ec_Xv > mejor_entropia):
-                        epochs_sin_mejora += 1
-
-                        if(epochs_sin_mejora>=paciencia):
-                            break
-                    else:
-                        mejor_entropia = ec_Xv
-                        epochs_sin_mejora = 0
- '''   
-
-
-''''' 
-def calcula_EC(X,y,pesos):
-    predicciones = sigmoide(np.dot(X,pesos))
-    predicciones_clasificadas= np.round(predicciones)
-    #suma de las entropias cruzadas de cada ejemplo x
-    # La formula de la ec es (-y * log(X) - (1 - y) * log(1 - X)), pero piden usar where. Habra que hacer las medias de cuando "y[i]" valga 1 y cuando sea 0
-    entropia_cruzada = np.sum(np.where(y == 1, -np.log(predicciones_clasificadas), -np.log(1 - predicciones_clasificadas)))
-
-    return entropia_cruzada
-
-#parecida a la que se da para evaluar un clasificador
-def calculaPrecision(X,y, pesos):
-    predicciones = sigmoide(np.dot(X,pesos))
-    predicciones_clasificadas= np.round(predicciones)
-
-    return sum(predicciones_clasificadas == y)/y.shape[0]
-'''
+def procesar_y(clases,lista_y):
+    # La clase que se considera positiva es la que 
+    # aparece en segundo lugar en esa lista.
+    transf_binaria = np.where(lista_y==clases[0],0,1)
+    return [0,1], transf_binaria
 
 
 # ------------------------------------------------------------------------------

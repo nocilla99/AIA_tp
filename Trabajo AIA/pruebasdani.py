@@ -42,7 +42,8 @@ class RegresionLogisticaMiniBatch():
     # HE UTILIZADO CASI LO MISMO QUE EL TUYO CAMBIANDO ALGUNAS COSAS PORQUE HE AÑADIDO UNA FUNCION AUXILIAR QUE 
     # ES entropia_cruzada , rendimiento  y inicializar_pesos 
     def entrena(self,X,y,Xv=None,yv=None,n_epochs=100,salida_epoch=False, early_stopping=False,paciencia=3):
-        self.clases = list(np.unique(y))
+
+        self.clases, y = procesar_y(list(np.unique(y)), y)
         self.n_epochs = n_epochs
 
         #normalizar datos entradas
@@ -57,7 +58,7 @@ class RegresionLogisticaMiniBatch():
         else :    
             norm.ajusta(Xv)
             Xv = norm.normaliza(Xv)
-        
+            _, yv = procesar_y(list(np.unique(yv)), yv)
         
         
 
@@ -149,12 +150,22 @@ class RegresionLogisticaMiniBatch():
         precision = aciertos / y.shape[0]
         return precision
 
-
+def procesar_y(clases,lista_y):
+    # La clase que se considera positiva es la que 
+    # aparece en segundo lugar en esa lista.
+    transf_binaria = np.where(lista_y==clases[0],0,1)
+    return [0,1], transf_binaria
 
 from scipy.special import expit    
 
 def sigmoide(x):
     return expit(x)
+
+def procesar_y(clases,lista_y):
+    # La clase que se considera positiva es la que 
+    # aparece en segundo lugar en esa lista.
+    transf_binaria = np.where(lista_y==clases[0],0,1)
+    return [0,1], transf_binaria
 # ---------------Metodos y clases
 
 class NormalizadorStandard():
