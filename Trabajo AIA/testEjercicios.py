@@ -49,8 +49,13 @@ def test3():
 
 
 
+<<<<<<< HEAD
+    # print(main.rendimiento(modelo,X_test,y_test))
+
+=======
 def test4():
     pass
+>>>>>>> 75cf59a6cfd31f6c66a76fec4ac5611722753eeb
 
 
 
