@@ -241,7 +241,7 @@ def particion_entr_prueba(X,y,test):
     ind_tr, ind_te = separar_clases_test_training(y, test)
     X_training,y_training = np.array([ X[i]for i in ind_tr] ), np.array([y[i] for i in ind_tr])
 
-    X_test,y_test = np.array([ X[i] for i in ind_te]) , np.array([y[i] for i in ind_te])
+    X_test,y_test = np.array([X[i] for i in ind_te]) , np.array([y[i] for i in ind_te])
     return X_training,X_test,y_training,y_test
 
 
@@ -1163,7 +1163,7 @@ def codifica_one_hot(X):
 
 
 
-
+#testear
 
 
 
@@ -1172,7 +1172,7 @@ def codifica_one_hot(X):
 
 
 # ---------------------------------------------------------
-# 7.2) Clasificación de imágenes de dígitos escritos a mano
+# 8.2) Clasificación de imágenes de dígitos escritos a mano
 # ---------------------------------------------------------
 
 
@@ -1203,7 +1203,7 @@ def codifica_one_hot(X):
 
 # --------------------------------------------------------------------------
 
-
+#descargar y aplicar funciones
 
 
 

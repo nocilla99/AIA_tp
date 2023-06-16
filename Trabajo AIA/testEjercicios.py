@@ -39,28 +39,19 @@ def test2_2():
     # Xte_n=normst2.normaliza(X_test)
 
 def test3():
-    cancer = main.RegresionLogisticaMiniBatch(rate=0.1,rate_decay=True)
-    cancer.entrena(X=X,y=y,salida_epoch=True)
-    rend = main.rendimiento(cancer,X,y)
-    print("Rendimeinto :",rend)
+    X_training,X_test,y_training,y_test = main.particion_entr_prueba(cd.X_cancer, cd.y_cancer, 0.3)
+    X_tr , X_v, y_tr, y_v = main.particion_entr_prueba(X_training, y_training, 0.3)
+
+    modelo = pd.RegresionLogisticaMiniBatch(0.005,n_epochs=100,batch_tam=16)
+    modelo.entrena(X_tr,y_tr,X_v,y_v,50,True,True,5)
+
+    # print(main.rendimiento(modelo,X_test,y_test))
 
 
 
 
 def test4():
-    X_training,X_test,y_training,y_test = main.particion_entr_prueba(X, y, 0.3)
-    X_training,X_v = X_training[:len(X_training)-50] , X_training[len(X_training)-50:]
-    y_training,y_v = y_training[:len(y_training)-50] , y_training[len(y_training)-50:]
-    modelo = pd.RegresionLogisticaMiniBatch(0.05,n_epochs=100,batch_tam=16)
-    modelo.entrena(X_training,y_training,None,None,50,True,True,3)
-
-    # array_predicciones = modelo.clasifica(X_test)
-    # array_predicciones = modelo.clasifica_prob(array_predicciones)
-
-    # print(main.rendimiento(modelo,X_test,y_test))
-    
-def test4_2():
-    X_training,X_test,y_training,y_test = main.particion_entr_prueba(X, y, 0.3)
+    pass
 
 
 
@@ -80,7 +71,7 @@ def test7():
 def test8_1():
 
     codifica_x = main.codifica_one_hot(X)
-    credito = main.RL_OvR(rate=0.1, rate_decay=False, batch_tam=64)
+    credito = main.RL_OvR(rate=0.1, rate_decay=False, batch_tam=64) 
     credito.entrena(codifica_x,y, n_epochs=100,salida_epoch=False)
 
     nuev_ej = np.array([[0,1,0,0,1,1,0,0,1,0,1,0,0]])
@@ -94,7 +85,7 @@ def test_OP():
     #parm = {"batch_tam":8,"rate":0.1,"rate_decay":False}
     #rend_valid = main.rendimiento_validacion_cruzada(main.RL_Multinomial,parm,X,y,n=5)
     #print(rend_valid)
-    iris = main.RL_Multinomial(rate=0.1,batch_tam=8,rate_decay=False)
+    iris = main.RL_Multinomial(rate=0.01,batch_tam=80,rate_decay=False)
     iris.entrena(X, y,n_epochs=2, salida_epoch=True)
     rend = main.rendimiento(iris, X, y)
     print("Rendimiento: ", rend)

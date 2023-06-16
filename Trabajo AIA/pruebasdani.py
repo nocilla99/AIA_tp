@@ -1,6 +1,4 @@
-#aqui voy a ir desarrollando los metodos antes de ponerlos en el docu del trabajo
 import numpy as np
-import trabajo_aia_2022_2023 as main
 class RegresionLogisticaMiniBatch():
 
     def __init__(self,rate=0.1,rate_decay=False,n_epochs=100,batch_tam=64):
@@ -28,17 +26,17 @@ class RegresionLogisticaMiniBatch():
         # predicciones = sigmoide(np.dot(X,self.weight)+self.bias)
 
         prod_escalares = [np.dot(fila, self.weight)[0] + self.bias for fila in X]
-        predicciones = (sigmoide(prod_escalares))
+        predicciones = sigmoide(prod_escalares)
 
         #suma de las entropias cruzadas de cada ejemplo x
         # La formula de la ec es (-y * log(pred) - (1 - y) * log(1 - pred)), pero piden usar where. Habra que hacer las medias de cuando "y[i]" valga 1. y cuando sea 0.
-        array_ = [np.where(y[i]==1, -np.log(np.maximum(predicciones[i], 1e-100)), -np.log(np.maximum(1-predicciones[i], 1e-100))) for i in range(0,len(predicciones))]
-        coste = np.sum( array_ )
+        array_entropias = [np.where(y[i]==1, -np.log(np.maximum(predicciones[i], 000.1)), -np.log(np.maximum(1-predicciones[i], 000.1))) for i in range(0,len(predicciones))]
+        coste = np.sum(array_entropias) 
 
         regularizacion = 2*np.sum(self.weight**2)
 
         coste += regularizacion
-        return coste 
+        return coste / len(array_entropias)
     
     
     # HE UTILIZADO CASI LO MISMO QUE EL TUYO CAMBIANDO ALGUNAS COSAS PORQUE HE AÑADIDO UNA FUNCION AUXILIAR QUE 
@@ -48,14 +46,18 @@ class RegresionLogisticaMiniBatch():
         self.n_epochs = n_epochs
 
         #normalizar datos entradas
-        norm = main.NormalizadorStandard()
+        norm = NormalizadorStandard()
         norm.ajusta(X)
         X = norm.normaliza(X)
         
 
-        if(early_stopping and (yv == None or Xv == None)):
+        if(Xv is None or yv is None):
             yv = y
             Xv = X
+        else :    
+            norm.ajusta(Xv)
+            Xv = norm.normaliza(Xv)
+        
         
         
 
@@ -71,7 +73,6 @@ class RegresionLogisticaMiniBatch():
 
         for epoch in range(self.n_epochs):
 
-            #para el descenso por gradiente hace falta rate y el gradiente
             if(self.rate_decay):
                 rate = (rate)*(1/( 1 + self.n_epochs))
 
@@ -84,7 +85,6 @@ class RegresionLogisticaMiniBatch():
                     
                     conjunto_x = X_partes[minibatch]
                     conjunto_y = y_partes[minibatch]
-
                     
                     # tamaños = np.unique([len(X_partes[z]) for z in range(0,len(X_partes))])
 
@@ -130,11 +130,10 @@ class RegresionLogisticaMiniBatch():
         if self.weight is None or self.bias is None:
             raise ClasificadorNoEntrenado("El clasificador no ha sido entrenado.")
         
-        # vector z que contiene la uncion lineal para cada ejemplo despues de multiplicarle con su peso y le suma el sesgo
+        # vector z que contiene la union lineal para cada ejemplo despues de multiplicarle con su peso y le suma el sesgo
         z = [np.dot(fila, self.weight)[0] + self.bias for fila in ejemplos]
+        # despues de aplicarle el sigmoide al vector z nos sale las probalidades de prediccion de cada ejemplo X
         predicciones = sigmoide(z) 
-        
-        # al aplicar el sigmoide al vector z nos sale las probalidades de prediccion de cada ejemplo X
         return predicciones
 
 
@@ -142,7 +141,7 @@ class RegresionLogisticaMiniBatch():
         probabilidad = self.clasifica_prob(ejemplo)
         # entonces ahora despues de obtener la probadlidad asignamos que si la prob >= 0.5 enonces su clasificacion 1
         # sino le asiganmos una clasificacion 0
-        return np.where(probabilidad >= 0.5, self.clases[1], self.clases[0])
+        return np.where(probabilidad > 0.5, self.clases[1], self.clases[0])
 
     def rendimiento(self, X, y):
         predicciones = self.clasifica(X)
@@ -156,3 +155,30 @@ from scipy.special import expit
 
 def sigmoide(x):
     return expit(x)
+# ---------------Metodos y clases
+
+class NormalizadorStandard():
+
+    def __init__(self):
+        self.media = None
+        self.desv_tipica = None
+        
+    def ajusta(self,X):
+        #axis 0 se usa para indicar que lo que queremos normalizar es el atributo (columna)
+        self.media= np.mean(X,axis=0)
+        self.desv_tipica= np.std(X,axis=0)
+
+    def normaliza(self,X):
+        #Para lo del error: en el metodo anterior se le asigna un valor, entonces si no 
+        #se ha ajustado antes el conjunto de datos la media y la desv seran None (el valor de la clase)
+        if (self.media is None or self.desv_tipica is None):
+            raise NormalizadorNoAjustado("Error, hay que ajustar antes de normalizar")
+        
+        res = (X-self.media)/self.desv_tipica
+        return res
+
+
+        
+class ClasificadorNoEntrenado(Exception): pass
+
+class NormalizadorNoAjustado(Exception): pass
