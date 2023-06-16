@@ -17,7 +17,7 @@ class RegresionLogisticaMiniBatch():
     # funcion auxliar para incilizar pesos aleatoriamente 
     # y los bias en 0 porque en principio no tiene prefrencia hacia una clase en particular
     def inicializar_pesos(self, n_carac):
-        self.weight = np.random.uniform(low=-0.2, high=0.2,size=(n_carac,1))
+        self.weight = np.random.uniform(low=-1, high=1,size=(n_carac,1))
         self.bias = 0
         return self.weight, self.bias
 
@@ -32,18 +32,14 @@ class RegresionLogisticaMiniBatch():
         # La formula de la ec es (-y * log(pred) - (1 - y) * log(1 - pred)), pero piden usar where. Habra que hacer las medias de cuando "y[i]" valga 1. y cuando sea 0.
         array_entropias = [np.where(y[i]==1, -np.log(np.maximum(predicciones[i], 000.1)), -np.log(np.maximum(1-predicciones[i], 000.1))) for i in range(0,len(predicciones))]
         coste = np.sum(array_entropias) 
-
-        regularizacion = 2*np.sum(self.weight**2)
-
-        coste += regularizacion
-        return coste / len(array_entropias)
+        return coste
     
     
     # HE UTILIZADO CASI LO MISMO QUE EL TUYO CAMBIANDO ALGUNAS COSAS PORQUE HE AÑADIDO UNA FUNCION AUXILIAR QUE 
     # ES entropia_cruzada , rendimiento  y inicializar_pesos 
     def entrena(self,X,y,Xv=None,yv=None,n_epochs=100,salida_epoch=False, early_stopping=False,paciencia=3):
 
-        self.clases, y = procesar_y(list(np.unique(y)), y)
+        self.clases, y = procesar_y(np.unique(y), y)
         self.n_epochs = n_epochs
 
         #normalizar datos entradas
@@ -58,7 +54,7 @@ class RegresionLogisticaMiniBatch():
         else :    
             norm.ajusta(Xv)
             Xv = norm.normaliza(Xv)
-            _, yv = procesar_y(list(np.unique(yv)), yv)
+            _, yv = procesar_y(np.unique(yv), yv)
         
         
 
@@ -68,9 +64,11 @@ class RegresionLogisticaMiniBatch():
         # INICIALIZA LOS PESOS
         self.weight , self.bias = self.inicializar_pesos(X.shape[1])
         
-        #Separar en batchs        
-        X_partes = [X[i:i + self.batch_tam] for i in range(0, len(X), self.batch_tam)]
-        y_partes = [y[i:i + self.batch_tam] for i in range(0, len(y), self.batch_tam)]
+        #Separar en batchs  
+        partes = self.batch_tam      
+        X_partes = np.array_split(X, (len(X)/self.batch_tam))
+        # [X[i:i + self.batch_tam] for i in range(0, len(X), self.batch_tam)]
+        y_partes = np.array_split(y, (len(y)/self.batch_tam))
 
         for epoch in range(self.n_epochs):
 
@@ -113,15 +111,15 @@ class RegresionLogisticaMiniBatch():
                     
                     rendimiento_Xv = self.rendimiento(Xv,yv)
 
-                    print(f"Epoch {epoch +1}, en entrenamiento EC: {ec_X}, rendimiento: {rendimiento_X}.")
-                    print(f"         en validación    EC: {ec_Xv}, rendimiento: {rendimiento_Xv}.")
+                    print(f"Epoch {epoch +1}, en entrenamiento EC: {ec_X}, rendimiento: {rendimiento_X}")
+                    print(f"         en validación    EC: {ec_Xv}, rendimiento: {rendimiento_Xv}")
 
                 if(early_stopping): 
                     if ( ec_Xv > mejor_entropia):
                         epochs_sin_mejora += 1
 
                         if(epochs_sin_mejora>=paciencia):
-                            print("PARADA TEMPRANA")
+                            print("-----------------PARADA TEMPRANA-----------------")
                             break
                     else:
                         mejor_entropia = ec_Xv
@@ -156,17 +154,20 @@ def procesar_y(clases,lista_y):
     transf_binaria = np.where(lista_y==clases[0],0,1)
     return [0,1], transf_binaria
 
-from scipy.special import expit    
 
-def sigmoide(x):
-    return expit(x)
 
 def procesar_y(clases,lista_y):
     # La clase que se considera positiva es la que 
     # aparece en segundo lugar en esa lista.
     transf_binaria = np.where(lista_y==clases[0],0,1)
     return [0,1], transf_binaria
+
+
 # ---------------Metodos y clases
+from scipy.special import expit    
+
+def sigmoide(x):
+    return expit(x)
 
 class NormalizadorStandard():
 

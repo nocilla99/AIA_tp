@@ -39,11 +39,10 @@ def test2_2():
     # Xte_n=normst2.normaliza(X_test)
 
 def test3():
-    X_training,X_test,y_training,y_test = main.particion_entr_prueba(X, y, 0.3)
-    X_tr , X_v, y_tr, y_v = main.particion_entr_prueba(X_training, y_training, 0.3)
+    X_training,X_test,y_training,y_test = main.particion_entr_prueba(X, y, 0.3) 
 
-    modelo = pd.RegresionLogisticaMiniBatch(0.005,n_epochs=100,batch_tam=16)
-    modelo.entrena(X_tr,y_tr,X_v,y_v,50,True,True,5)
+    modelo = pd.RegresionLogisticaMiniBatch(0.1,n_epochs=15,batch_tam=16)
+    modelo.entrena(X_training,y_training,X_test,y_test,40,True,True,10)
 
     # print(main.rendimiento(modelo,X_test,y_test))
 
