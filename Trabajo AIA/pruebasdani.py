@@ -128,7 +128,7 @@ class RegresionLogisticaMiniBatch():
 
     def clasifica_prob(self,ejemplos):
         if self.weight is None or self.bias is None:
-            raise ClasificadorNoEntrenado("El clasificador no ha sido entrenado.")
+            raise main.ClasificadorNoEntrenado("El clasificador no ha sido entrenado.")
         
         # vector z que contiene la uncion lineal para cada ejemplo despues de multiplicarle con su peso y le suma el sesgo
         z = [np.dot(fila, self.weight)[0] + self.bias for fila in ejemplos]
