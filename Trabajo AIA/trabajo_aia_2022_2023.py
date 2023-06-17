@@ -208,6 +208,22 @@ def particion_entr_prueba(X,y,test=0.2):
     return X_training,X_test,y_training,y_test
 
 
+#TEST
+import carga_datos as cd
+def test1():
+    
+    X = cd.X_cancer
+    y= cd.y_cancer
+    test = round(np.random.uniform(0.2,0.8),3)
+    
+    print("--------------------------- TEST 1-----------------")
+    _,_,y_training,y_test= particion_entr_prueba(X, y, test)
+    proporcion = round(len(y_test)/len(np.concatenate([y_test,y_training])),1)
+    print("Proporcion parametro: {} \nProporcion real: {}\nTamanyo train: {} \nTamanyo test: {}".format(test,proporcion,len(y_training),len(y_test)))    
+    print("Tamaño del conjunto",len(y))
+    print("--------------------------------------------")
+
+test1()
 # ===========================
 # EJERCICIO 2: NORMALIZADORES
 # ===========================
@@ -293,6 +309,27 @@ class NormalizadorStandard():
         return res
 
 
+#TEST
+
+def test2_1():
+        
+    X = cd.X_cancer
+    y= cd.y_cancer
+    test = round(np.random.uniform(0.2,0.8),3)
+
+    print("--------------------------- TEST 2.1-----------------")
+    X_training,X_test,y_training,y_test = particion_entr_prueba(X, y, test)
+    normst=NormalizadorStandard()
+    normst.ajusta(X_training)
+    Xtr_n=normst.normaliza(X_training)
+    Xte_n=normst.normaliza(X_test)
+    print("Media: {} \nDesv Tipic: {}".format(np.average(normst.media), np.average(normst.desv_tipica)))
+    
+    # #Caso para dar el raise
+    # normst2=NormalizadorStandard()
+    # Xte_n=normst2.normaliza(X_test)
+    print("--------------------------------------------")
+test2_1()
 # ------------------------
 # 2.2) Normalizador MinMax
 # ------------------------
@@ -344,6 +381,27 @@ class NormalizadorMinMax():
         self.maximos = np.max(X,axis=0) 
         res = (X-self.minimos)/(self.maximos-self.minimos)
         return res
+
+#TEST
+def test2_2():
+    
+    X = cd.X_cancer
+    y= cd.y_cancer
+    test = round(np.random.uniform(0.2,0.8),3)
+    print("--------------------------- TEST 2.2-----------------")
+    X_training,X_test,y_training,y_test = particion_entr_prueba(X, y, test)
+    normst= NormalizadorMinMax()
+    normst.ajusta(X_training)
+    Xtr_n=normst.normaliza(X_training)
+    Xte_n=normst.normaliza(X_test)
+    print("Minimos: {} \nMaximos: {}".format(np.average(normst.minimos), np.average(normst.maximos)))
+    
+    # #Caso para dar el raise
+    # normst2=NormalizadorStandard()
+    # Xte_n=normst2.normaliza(X_test)
+    print("--------------------------------------------")
+
+test2_2()
 
 # ===========================================
 # EJERCICIO 3: REGRESIÓN LOGÍSTICA MINI-BATCH
@@ -671,7 +729,7 @@ class RegresionLogisticaMiniBatch():
                         epochs_sin_mejora += 1
 
                         if(epochs_sin_mejora>=paciencia):
-                            print("-----------------PARADA TEMPRANA-----------------")
+                            print("~~~~~~~~~~PARADA TEMPRANA~~~~~~~~~~")
                             break
                     else:
                         mejor_entropia = ec_Xv
@@ -706,17 +764,36 @@ def procesar_y(clases,lista_y):
     transf_binaria = np.where(lista_y==clases[0],0,1)
     return [0,1], transf_binaria
 
+#TEST
 
+def test3():
+    
+    X = cd.X_cancer
+    y= cd.y_cancer
+    test = round(np.random.uniform(0.2,0.8),3)
+    print("--------------------------- TEST 3-----------------")
+
+    X= cd.X_votos
+    y = cd.y_votos
+    
+    X_partir,X_test,y_partir,y_test = particion_entr_prueba(X, y,test)
+    X_training,X_vali,y_training,y_vali = particion_entr_prueba(X_partir,y_partir,0.3)
+
+    clasif_rl = RegresionLogisticaMiniBatch(0.1,n_epochs=15,batch_tam=16)
+    clasif_rl.entrena(X_training,y_training,X_vali,y_vali,40,True,True,10)
+    _,y_test_pro = procesar_y(np.unique(y),y_test)
+    tasa  = rendimiento(clasif_rl,X_test,y_test_pro)
+
+    print("Rendimiento test:",tasa)
+    print("--------------------------------------------")
+
+test3()
 
 # ------------------------------------------------------------------------------
-
-
 
 # =================================================
 # EJERCICIO 4: IMPLEMENTACIÓN DE VALIDACIÓN CRUZADA
 # =================================================
-
-
 
 # Este jercicio puede servir para el ajuste de parámetros en los ejercicios posteriores, 
 # pero si no se realiza, se podrían ajustar siguiendo el método "holdout" 
@@ -759,9 +836,6 @@ def procesar_y(clases,lista_y):
 # Partición: 4. Rendimiento:0.9726027397260274
 # Partición: 5. Rendimiento:0.9315068493150684
 # >>> 0.9671232876712328
-
-
-
 
 
 # El resultado es la media de rendimientos obtenidos entrenando cada vez con
@@ -814,6 +888,17 @@ def rendimiento_validacion_cruzada(clase_clasificador,params,X,y,Xv=None,yv=None
     rend_med = np.mean(rends)
     return rend_med
 
+#TEST
+def test4():
+        
+    X = cd.X_cancer
+    y= cd.y_cancer
+    test = round(np.random.uniform(0.2,0.8),3)
+    print("--------------------------- TEST 4-----------------")
+    print("--------------------------------------------")
+
+# test4()
+
 
 # ===================================================
 # EJERCICIO 5: APLICANDO LOS CLASIFICADORES BINARIOS
@@ -848,9 +933,15 @@ def rendimiento_validacion_cruzada(clase_clasificador,params,X,y,Xv=None,yv=None
 
 
 
+#TEST
+def test5():
+    X = cd.X_cancer
+    y= cd.y_cancer
+    test = round(np.random.uniform(0.2,0.8),3)
+    pass
 
 
-
+#test5()
 
 
 
@@ -976,11 +1067,23 @@ class RL_OvR():
             
 # --------------------------------
 
+#TEST
+def test6():
+    print("--------------------------- TEST 6-----------------")
+    X = cd.X_cancer
+    y= cd.y_cancer
+    test = round(np.random.uniform(0.2,0.8),3)
 
+    X_tr,X_te,y_tr,y_te = particion_entr_prueba(X, y, test)
 
+    modelo_OvR = RL_OvR(0.1,False,60)
+    modelo_OvR.entrena(X_tr,y_tr,50,False)
 
+    rend = rendimiento(modelo_OvR,X_te,y_te)
+    print("Rendimiento test:",rend)
+    print("--------------------------------------------")
 
-
+test6()
 
 # =================================
 # EJERCICIO 7: CODIFICACIÓN ONE-HOT
@@ -1064,9 +1167,26 @@ def codifica_one_hot(X):
     return codifica_X
 
 
+#TEST
+def test7():
+    
+    X = cd.X_cancer
+    y= cd.y_cancer
+    test = round(np.random.uniform(0.2,0.8),3)
+    print("--------------------------- TEST 7-----------------")
+    Xc=np.array([["a",1,"c","x"],
+                  ["b",2,"c","y"],
+                  ["c",1,"d","x"],
+                  ["a",2,"d","z"],
+                  ["c",1,"e","y"],
+                  ["c",2,"f","y"]])
+    codifi_X = codifica_one_hot(Xc)
+
+    print("La codificacion es: ",codifi_X)
+    print("--------------------------------------------")
 
 
-
+test7()
 
 # =====================================================
 # EJERCICIO 8: APLICACIONES DEL CLASIFICADOR MULTICLASE
@@ -1087,8 +1207,39 @@ def codifica_one_hot(X):
 # ----------------------
 
 
+def test8_1(rate,rate_decay,batch_tam,n_epochs,salida_epoch,muestras_randoms):
+    #######params###########
+
+    #########################
+    print("--------------------------- TEST 8.1-----------------")
+    X = cd.X_votos
+    y = cd.y_votos
+    test = round(np.random.uniform(0.2,0.8),3)
+
+    X_tr,X_te,y_tr,y_te = particion_entr_prueba(X, y, test)
+
+    conjunto_codeado = codifica_one_hot(X_tr)
 
 
+    clasif_0vr = RL_OvR(rate,rate_decay,batch_tam)
+    clasif_0vr.entrena(X_tr,y_tr,n_epochs,salida_epoch)
+
+    _, y_te_procesadas = procesar_y(np.unique(y_te),y_te)
+    tasa = rendimiento(clasif_0vr,X_te,y_te)
+
+    print("Rendimiento test:",tasa)
+    for i in range(0,muestras_randoms):
+        ejemplo_random = np.random.randint(0,len(X)-1)
+        dato_ejemplo = X[ejemplo_random]
+        print(f"*Se pretende clasificar el ejemplo con el indice {ejemplo_random}: {dato_ejemplo}")
+
+        prediccion_ejemplo = clasif_0vr.clasifica([dato_ejemplo])
+        print(f"{y[ejemplo_random] == prediccion_ejemplo[0]} -> Clasificacion real: {y[ejemplo_random]}; Predicción del modelo: {prediccion_ejemplo[0]}")
+    
+    print("--------------------------------------------")
+
+test8_1(rate = 0.1,rate_decay = False ,batch_tam = 64,n_epochs = 50
+    ,salida_epoch = False,muestras_randoms = 5)
 # ---------------------------------------------------------
 # 8.2) Clasificación de imágenes de dígitos escritos a mano
 # ---------------------------------------------------------
@@ -1122,25 +1273,6 @@ def codifica_one_hot(X):
 # --------------------------------------------------------------------------
 
 #descargar y aplicar funciones
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 # =========================================================================
 # EJERCICIO OPCIONAL PARA SUBIR NOTA: 
@@ -1293,3 +1425,28 @@ class RL_Multinomial():
         pred= self.clasifica(X)
         aciertos = np.sum(pred == y)
         return aciertos / y.shape[0]
+
+
+#TEST
+def test_OP():
+    
+    X = cd.X_cancer
+    y= cd.y_cancer
+    test = round(np.random.uniform(0.2,0.8),3)
+    print("--------------------------- TEST OP-----------------")
+    #print("Codifi: ",codifica_one_hot(y))
+    
+    #print(X)
+    #parm = {"batch_tam":8,"rate":0.1,"rate_decay":False}
+    #rend_valid = rendimiento_validacion_cruzada(RL_Multinomial,parm,X,y,n=5)
+    #print(rend_valid)
+    X_training,X_test,y_training,y_test = particion_entr_prueba(X, y, test)
+   
+    iris = RL_Multinomial(rate=0.01,batch_tam=64,rate_decay=False)
+    iris.entrena(X_training, y_training,n_epochs=39, salida_epoch=True)
+    rend = rendimiento(iris, X_training, y_training)
+    print("Rendimiento: ", rend)
+    print("--------------------------------------------")
+
+    
+test_OP()

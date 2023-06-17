@@ -1124,7 +1124,7 @@ def codifica_one_hot(X):
 
 # ----------------------
 
-
+#todos los tests y pruebas estan en el archivo testEjercicios
 
 
 # ---------------------------------------------------------
