@@ -182,68 +182,30 @@ import numpy as np
 
 
 ## ---------- 
-def particion_entr_prueba(X,y,test):
-   
-    '''
-    Aqui se indica qué fila pertenece a cada clase. 
-    Se crea un diccionario donde las keys son las clases y los valores de cada key son las filas de esa clase
-
-    Entrada: la lista de clasificaciones
-    Salida: indices de las filas de cada clase
-    '''
-    def separar_indices(y):
-        diccionario_indices= dict()
-
-        for i in range(0,len(y)):
-            if y[i] in diccionario_indices:
-                diccionario_indices[y[i]].append(i)
-            else:
-                diccionario_indices[y[i]]=[i]
-        return diccionario_indices
-
-
-    '''
-    Shufflear los elementos de forma random, separarlos segun el atributo test(proporcion)
-    meterlos en listas de conjunto_training y conjunto_test
-    Ordenar cada conjunto en orden (para que se mantenga)
-
-    Entrada: separarIndices, test
-    Salida: indices de las filas para test e indices para training
-    '''
-
-    def separar_clases_test_training(y,test):
-        indices_training = list()
-        indices_test = list()
+def particion_entr_prueba(X,y,test=0.2):
     
-        diccionario_indices = separar_indices(y)
+    clases, n_clases = np.unique(y, return_counts=True)
+    tam_test = np.floor(n_clases * test).astype(int)
+    tam_train = n_clases - tam_test
 
-        for clase in diccionario_indices:
-            np.random.shuffle(diccionario_indices[clase])  
-            indices = len(diccionario_indices[clase])
-            tamanyo = int(indices*test)
-            indices_training += diccionario_indices[clase][tamanyo-1:]
-            indices_test += diccionario_indices[clase][:tamanyo-1]
-        
-        
-        indices_test.sort()
-        indices_training.sort()
+    
+    indices = np.arange(len(y))
+    indices_train = list()
+    indices_test = list()
 
-        return indices_training,indices_test
-            
+    for clase, n_train, n_test in zip(clases, tam_train, tam_test):
+        indice = indices[y == clase]
+        np.random.permutation(indice)
+        indices_train.extend(indice[:n_train])
+        indices_test.extend(indice[n_train:n_train + n_test])
 
-    '''
-    Entrada X, y , test(proporcion)
-    Separa los ejemplos X en conjunto de test y entrenamientos
+    indices_train = np.array(indices_train)
+    indices_test = np.array(indices_test)
 
-    Salida: X_training,X_test,y_training,y_test
-    '''
+    X_training, X_test = X[indices_train],X[indices_test]
+    y_training, y_test = y[indices_train],y[indices_test]
 
-    ind_tr, ind_te = separar_clases_test_training(y, test)
-    X_training,y_training = np.array([ X[i]for i in ind_tr] ), np.array([y[i] for i in ind_tr])
-
-    X_test,y_test = np.array([X[i] for i in ind_te]) , np.array([y[i] for i in ind_te])
     return X_training,X_test,y_training,y_test
-
 
 
 # ===========================
@@ -622,7 +584,7 @@ class RegresionLogisticaMiniBatch():
         # La formula de la ec es (-y * log(pred) - (1 - y) * log(1 - pred)), pero piden usar where. Habra que hacer las medias de cuando "y[i]" valga 1. y cuando sea 0.
         array_entropias = [np.where(y[i]==1, -np.log(np.maximum(predicciones[i], 000.1)), -np.log(np.maximum(1-predicciones[i], 000.1))) for i in range(0,len(predicciones))]
         coste = np.sum(array_entropias) 
-        return coste
+        return coste/len(array_entropias)
     
     
     # HE UTILIZADO CASI LO MISMO QUE EL TUYO CAMBIANDO ALGUNAS COSAS PORQUE HE AÑADIDO UNA FUNCION AUXILIAR QUE 
@@ -737,14 +699,6 @@ class RegresionLogisticaMiniBatch():
         aciertos = (predicciones == y).sum()
         precision = aciertos / y.shape[0]
         return precision
-
-def procesar_y(clases,lista_y):
-    # La clase que se considera positiva es la que 
-    # aparece en segundo lugar en esa lista.
-    transf_binaria = np.where(lista_y==clases[0],0,1)
-    return [0,1], transf_binaria
-
-
 
 def procesar_y(clases,lista_y):
     # La clase que se considera positiva es la que 
@@ -1135,15 +1089,6 @@ def codifica_one_hot(X):
 
 
 
-
-#testear
-
-
-
-
-
-
-
 # ---------------------------------------------------------
 # 8.2) Clasificación de imágenes de dígitos escritos a mano
 # ---------------------------------------------------------
@@ -1264,62 +1209,87 @@ def codifica_one_hot(X):
 
 
 
-
-import numpy as np
 from scipy.special import softmax
-
 class RL_Multinomial():
+
     def __init__(self, rate=0.1, rate_decay=False, batch_tam=64):
         self.rate = rate
         self.rate_decay = rate_decay
         self.batch_tam = batch_tam
+        self.clases = []
         self.weights = None
+        self.biases = None
+
+    def inicializacion_pesos(self, n_carac, n_clases):
+        self.weights = np.random.uniform(low=-0.2, high=0.2, size=(n_carac, n_clases))
+        self.biases = np.zeros(n_clases)
+
+    def entropia_cruzada(self, X, y):
+        z = np.dot(X, self.weights) + self.biases
+        # prob partenencia a cada clase axis = 1 (filas)
+        prob = softmax(z, axis=1)
+        log_prob = np.log(np.maximum(prob, 1e-10))  # evitar los logs de ceros
+        EC = -np.sum(log_prob * y) / X.shape[0]
+        return EC
 
     def entrena(self, X, y, n_epochs=100, salida_epoch=False):
-        # Inicilizamos los pesos
-        n_clases = len(np.unique(y))
+        self.clases = np.unique(y)
         n_carac = X.shape[1]
-        # una mtriz de pesos para multiples clases
-        self.weights = np.random.randn(n_clases, n_carac)
+        n_clases = len(self.clases)
 
-        # 
+        # Normalizar input data
+        norm = NormalizadorStandard()
+       # X = codifica_one_hot(X)
+        norm.ajusta(X)
+        X = norm.normaliza(X)
+
+        # codifica y con codifica_one_hot
+        codifica_y = codifica_one_hot(y)
+
+        # Initialize weights and biases
+        self.inicializacion_pesos(n_carac, n_clases)
+
         for epoch in range(n_epochs):
             if self.rate_decay:
-                rate = (self.rate)*(1/( 1 + n_epochs))
-            else:
-                rate = self.rate
+                self.rate *= 1 / (1 + n_epochs)
 
-            altera = np.random.permutation(X.shape[0])
-            X_altera = X[altera]
-            y_altera = y[altera]
-
+            # Mini-batch training
             for i in range(0, X.shape[0], self.batch_tam):
-                conjunto_X = X_altera[i:i+self.batch_tam]
-                conjunto_y = y_altera[i:i+self.batch_tam]
-                gradients = self.calcular_gradientes(conjunto_X, conjunto_y)
-                self.weights -= rate * gradients
+                
+                X_batch = X[i:i + self.batch_tam]
+                y_batch = codifica_y[i:i + self.batch_tam]
+
+                z = np.dot(X_batch, self.weights) + self.biases
+                y_pred = softmax(z, axis=1)
+
+                gradient_weights = np.dot(X_batch.T, y_pred - y_batch)
+                # como queremo obtener la suma de las difrenecias para cada clase por separado 
+                # axis = 0 suma a lo largo del eje de las filas
+                gradient_biases = np.sum(y_pred - y_batch, axis=0)
+
+                self.weights -= self.rate * gradient_weights
+                self.biases -= self.rate * gradient_biases
 
             if salida_epoch:
-                loss = self.calcular_entropia_cruzada(X, y,0)
-                print(f"Epoch {epoch+1}/{n_epochs} - Loss: {loss}")
-
-
-    # 
-    def calcular_entropia_cruzada(self, X, y,reg_lambda):
-        m = codifica_one_hot(y)  # Codificación one-hot de las etiquetas verdaderas
-        y_pred = self.clasifica_prob(X)  # Probabilidades predichas utilizando softmax
-        coste = -np.sum(np.dot(m.T , np.log(y_pred)))  # Suma de los términos de la entropía cruzada
-        regularizacion = (reg_lambda)*np.sum(self.weights)
-        coste += regularizacion
-        return coste  
+                EC = self.entropia_cruzada(X, codifica_y)
+                rend = self.rendimiento(X, y)
+                print(f"Epoch {epoch + 1} - Entropia Cruzada: {EC:.7f} - Rendimiento: {rend}")
 
     def clasifica_prob(self, ejemplos):
+        if self.weights is None or self.biases is None:
+            raise ClasificadorNoEntrenado("El clasificador no ha sido entrenado.")
 
-        z = np.dot(ejemplos, self.weights.T)
-        y_pred = softmax(z)
-        return y_pred
+        z = np.dot(ejemplos, self.weights) + self.biases
+        prob = softmax(z, axis=1)
+        return prob
 
     def clasifica(self, ejemplos):
         prob = self.clasifica_prob(ejemplos)
-        return np.argmax(prob, axis=1)
+        # obtenemos la clase (columna) que tiene mayor probabilidad (filas)
+        pred = np.argmax(prob, axis=1)
+        return self.clases[pred]
 
+    def rendimiento(self, X, y):
+        pred= self.clasifica(X)
+        aciertos = np.sum(pred == y)
+        return aciertos / y.shape[0]
