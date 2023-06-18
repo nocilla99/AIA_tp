@@ -1306,3 +1306,4 @@ class RL_Multinomial():
         prob = self.clasifica_prob(ejemplos)
         return np.argmax(prob, axis=1)
 
+#

@@ -139,11 +139,11 @@ def test_OP():
 
 
 
-# test1()
-# test2_1()
-# test2_2()
-# test3()
-# test4()
-# test7()
-# test8_1()
-# test_OP()
+test1()
+test2_1()
+test2_2()
+test3()
+test4()
+test7()
+test8_1()
+test_OP()
