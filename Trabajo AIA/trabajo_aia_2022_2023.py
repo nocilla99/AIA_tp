@@ -861,9 +861,7 @@ def rendimiento_validacion_cruzada(clase_clasificador,params,X,y,Xv=None,yv=None
     rends = []
 
     for i in range(n):
-        # aprovechando del ej1 dividimos el conjunto de datos en tranining y validacion aleatoriamente
-        #X_training,Xv,y_training,yv = particion_entr_prueba(X,y, test=1/n)
-        
+       
         indices_entrenamiento = np.concatenate([particiones[j] for j in range(n) if j != i])
         indices_validacion = particiones[i]
         
@@ -894,7 +892,7 @@ def test4():
     print("--------------------------- TEST 4 val_cruzada -----------------")
 
     rendimiento_validacion_cruzada(RegresionLogisticaMiniBatch,
-                               {"batch_tam":16,"rate":0.01,"rate_decay":True},
+                               {"batch_tam":8,"rate":0.001,"rate_decay":True},
                                 X,y,n=5)
     print("--------------------------------------------")
 
@@ -956,8 +954,8 @@ def test5():
     
     X_partir, X_te, y_partir, y_te = particion_entr_prueba(X, y, 0.3)   
     X_tr,X_v,y_tr,y_v = particion_entr_prueba(X_partir, y_partir, 0.3)
-    modelovotos = RegresionLogisticaMiniBatch(rate=0.1,rate_decay=True,n_epochs=60,batch_tam=16)
-    modelovotos.entrena(X_tr,y_tr,X_v, y_v,64,False,False,3)
+    modelovotos = RegresionLogisticaMiniBatch(rate=0.001,rate_decay=True,n_epochs=100,batch_tam=16)
+    modelovotos.entrena(X_tr,y_tr,X_v, y_v,100,False,False,3)
     tasa  = rendimiento(modelovotos,X_te,y_te)
     print("Rendimiento test",tasa)
     print("--------------------------------------------") 
@@ -1446,18 +1444,21 @@ def test_OP():
     y = cd.y_votos
     test = 0.3
     print("--------------------------- TEST OP  Rl-mult-----------------")
-    rend = 0
+    rend_tes = 0
+    rend_train = 0
     i = 0
-    while(rend < 0.55):
+    while((rend_tes and rend_train) < 0.55):
         # print("Intento ",i)
         X_training,X_test,y_training,y_test = particion_entr_prueba(X, y, test)
     
-        modelo = RL_Multinomial(rate=0.01,batch_tam=64,rate_decay=True)
-        modelo.entrena(X_training, y_training,n_epochs=100, salida_epoch=True)
-        rend = rendimiento(modelo, X_test, y_test)
+        modelo = RL_Multinomial(rate=0.01,batch_tam=16,rate_decay=True)
+        modelo.entrena(X_training, y_training,n_epochs=40, salida_epoch=True)
+        rend_tes = rendimiento(modelo, X_test, y_test)
+        rend_train = rendimiento(modelo, X_training, y_training)
         i+=1
 
-    print("Rendimiento: ", rend)
+    print("Rendimiento de test: ", rend_tes)
+    print("Rendimiento de train: ", rend_train)
     print("--------------------------------------------")
 
     
