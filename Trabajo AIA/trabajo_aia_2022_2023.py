@@ -214,16 +214,16 @@ def test1():
     
     X = cd.X_cancer
     y= cd.y_cancer
-    test = round(np.random.uniform(0.2,0.8),3)
+    test = 0.3
     
-    print("--------------------------- TEST 1-----------------")
+    print("--------------------------- TEST 1 particiones -----------------")
     _,_,y_training,y_test= particion_entr_prueba(X, y, test)
     proporcion = round(len(y_test)/len(np.concatenate([y_test,y_training])),1)
     print("Proporcion parametro: {} \nProporcion real: {}\nTamanyo train: {} \nTamanyo test: {}".format(test,proporcion,len(y_training),len(y_test)))    
     print("Tamaño del conjunto",len(y))
     print("--------------------------------------------")
 
-test1()
+
 # ===========================
 # EJERCICIO 2: NORMALIZADORES
 # ===========================
@@ -317,7 +317,7 @@ def test2_1():
     y= cd.y_cancer
     test = round(np.random.uniform(0.2,0.8),3)
 
-    print("--------------------------- TEST 2.1-----------------")
+    print("--------------------------- TEST 2.1 norm standar-----------------")
     X_training,X_test,y_training,y_test = particion_entr_prueba(X, y, test)
     normst=NormalizadorStandard()
     normst.ajusta(X_training)
@@ -329,7 +329,7 @@ def test2_1():
     # normst2=NormalizadorStandard()
     # Xte_n=normst2.normaliza(X_test)
     print("--------------------------------------------")
-test2_1()
+
 # ------------------------
 # 2.2) Normalizador MinMax
 # ------------------------
@@ -388,20 +388,18 @@ def test2_2():
     X = cd.X_cancer
     y= cd.y_cancer
     test = round(np.random.uniform(0.2,0.8),3)
-    print("--------------------------- TEST 2.2-----------------")
+    print("--------------------------- TEST 2.2 norm minmax-----------------")
     X_training,X_test,y_training,y_test = particion_entr_prueba(X, y, test)
     normst= NormalizadorMinMax()
     normst.ajusta(X_training)
-    Xtr_n=normst.normaliza(X_training)
-    Xte_n=normst.normaliza(X_test)
-    print("Minimos: {} \nMaximos: {}".format(np.average(normst.minimos), np.average(normst.maximos)))
+    normst.normaliza(X_training)
+    print("Minimos: {} \nMaximos: {}".format(normst.minimos, normst.maximos))
     
     # #Caso para dar el raise
     # normst2=NormalizadorStandard()
     # Xte_n=normst2.normaliza(X_test)
     print("--------------------------------------------")
 
-test2_2()
 
 # ===========================================
 # EJERCICIO 3: REGRESIÓN LOGÍSTICA MINI-BATCH
@@ -770,8 +768,8 @@ def test3():
     
     X = cd.X_cancer
     y= cd.y_cancer
-    test = round(np.random.uniform(0.2,0.8),3)
-    print("--------------------------- TEST 3-----------------")
+    test = 0.3
+    print("--------------------------- TEST 3 RL-binario-----------------")
 
     X= cd.X_votos
     y = cd.y_votos
@@ -787,7 +785,6 @@ def test3():
     print("Rendimiento test:",tasa)
     print("--------------------------------------------")
 
-test3()
 
 # ------------------------------------------------------------------------------
 
@@ -886,6 +883,7 @@ def rendimiento_validacion_cruzada(clase_clasificador,params,X,y,Xv=None,yv=None
 
     # rendimiento medio entre todos los rendimintos
     rend_med = np.mean(rends)
+    print("Rendimiento :",rend_med)
     return rend_med
 
 #TEST
@@ -893,11 +891,13 @@ def test4():
         
     X = cd.X_cancer
     y= cd.y_cancer
-    test = round(np.random.uniform(0.2,0.8),3)
-    print("--------------------------- TEST 4-----------------")
+    print("--------------------------- TEST 4 val_cruzada -----------------")
+
+    rendimiento_validacion_cruzada(RegresionLogisticaMiniBatch,
+                               {"batch_tam":16,"rate":0.01,"rate_decay":True},
+                                X,y,n=5)
     print("--------------------------------------------")
 
-# test4()
 
 
 # ===================================================
@@ -935,17 +935,32 @@ def test4():
 
 #TEST
 def test5():
+    print("--------------------------- TEST 5 ejemplos -----------------")
+    print("CONJUNTO VOTOS")
+    X = cd.X_votos
+    y= cd.y_votos
+    test = 0.3
+    
+    X_partir, X_te, y_partir, y_te = particion_entr_prueba(X, y, 0.3)   
+    X_tr,X_v,y_tr,y_v = particion_entr_prueba(X_partir, y_partir, 0.3)
+    modelovotos = RegresionLogisticaMiniBatch(rate=0.01,rate_decay=False,n_epochs=100,batch_tam=64)
+    modelovotos.entrena(X_tr,y_tr,X_v, y_v,100,True,True,3)
+    _,y_test_pro = procesar_y(np.unique(y),y_te)
+    tasa  = rendimiento(modelovotos,X_te,y_test_pro)
+    print("Rendimiento test",tasa)
+    
+    print("Conjunto cancer")
     X = cd.X_cancer
     y= cd.y_cancer
-    test = round(np.random.uniform(0.2,0.8),3)
-    pass
-
-
-#test5()
-
-
-
-
+    test = 0.3
+    
+    X_partir, X_te, y_partir, y_te = particion_entr_prueba(X, y, 0.3)   
+    X_tr,X_v,y_tr,y_v = particion_entr_prueba(X_partir, y_partir, 0.3)
+    modelovotos = RegresionLogisticaMiniBatch(rate=0.1,rate_decay=True,n_epochs=60,batch_tam=16)
+    modelovotos.entrena(X_tr,y_tr,X_v, y_v,64,False,False,3)
+    tasa  = rendimiento(modelovotos,X_te,y_te)
+    print("Rendimiento test",tasa)
+    print("--------------------------------------------") 
 
 
 
@@ -1069,21 +1084,20 @@ class RL_OvR():
 
 #TEST
 def test6():
-    print("--------------------------- TEST 6-----------------")
-    X = cd.X_cancer
-    y= cd.y_cancer
-    test = round(np.random.uniform(0.2,0.8),3)
+    print("--------------------------- TEST 6 Ovr-----------------")
+    X = cd.X_iris
+    y= cd.y_iris
+    test = 0.3
 
     X_tr,X_te,y_tr,y_te = particion_entr_prueba(X, y, test)
-
-    modelo_OvR = RL_OvR(0.1,False,60)
-    modelo_OvR.entrena(X_tr,y_tr,50,False)
+    modelo_OvR = RL_OvR(0.01,False,60)
+    modelo_OvR.entrena(X_tr,y_tr,100,False)
 
     rend = rendimiento(modelo_OvR,X_te,y_te)
     print("Rendimiento test:",rend)
     print("--------------------------------------------")
 
-test6()
+
 
 # =================================
 # EJERCICIO 7: CODIFICACIÓN ONE-HOT
@@ -1172,8 +1186,8 @@ def test7():
     
     X = cd.X_cancer
     y= cd.y_cancer
-    test = round(np.random.uniform(0.2,0.8),3)
-    print("--------------------------- TEST 7-----------------")
+    test = 0.3
+    print("--------------------------- TEST 7 cod hot enc-----------------")
     Xc=np.array([["a",1,"c","x"],
                   ["b",2,"c","y"],
                   ["c",1,"d","x"],
@@ -1186,7 +1200,6 @@ def test7():
     print("--------------------------------------------")
 
 
-test7()
 
 # =====================================================
 # EJERCICIO 8: APLICACIONES DEL CLASIFICADOR MULTICLASE
@@ -1207,27 +1220,26 @@ test7()
 # ----------------------
 
 
-def test8_1(rate,rate_decay,batch_tam,n_epochs,salida_epoch,muestras_randoms):
+def test8_1(muestras_randoms):
     #######params###########
 
     #########################
-    print("--------------------------- TEST 8.1-----------------")
+    print("--------------------------- TEST 8.1 ovr + onehot-----------------")
     X = cd.X_votos
     y = cd.y_votos
-    test = round(np.random.uniform(0.2,0.8),3)
+    test = 0.3
 
     X_tr,X_te,y_tr,y_te = particion_entr_prueba(X, y, test)
 
     conjunto_codeado = codifica_one_hot(X_tr)
 
 
-    clasif_0vr = RL_OvR(rate,rate_decay,batch_tam)
-    clasif_0vr.entrena(X_tr,y_tr,n_epochs,salida_epoch)
+    clasif_0vr = RL_OvR(0.01,False,64)
+    clasif_0vr.entrena(X_tr,y_tr,100,False)
 
     _, y_te_procesadas = procesar_y(np.unique(y_te),y_te)
     tasa = rendimiento(clasif_0vr,X_te,y_te)
 
-    print("Rendimiento test:",tasa)
     for i in range(0,muestras_randoms):
         ejemplo_random = np.random.randint(0,len(X)-1)
         dato_ejemplo = X[ejemplo_random]
@@ -1236,10 +1248,10 @@ def test8_1(rate,rate_decay,batch_tam,n_epochs,salida_epoch,muestras_randoms):
         prediccion_ejemplo = clasif_0vr.clasifica([dato_ejemplo])
         print(f"{y[ejemplo_random] == prediccion_ejemplo[0]} -> Clasificacion real: {y[ejemplo_random]}; Predicción del modelo: {prediccion_ejemplo[0]}")
     
+    print("Rendimiento test:",tasa)
     print("--------------------------------------------")
 
-test8_1(rate = 0.1,rate_decay = False ,batch_tam = 64,n_epochs = 50
-    ,salida_epoch = False,muestras_randoms = 5)
+
 # ---------------------------------------------------------
 # 8.2) Clasificación de imágenes de dígitos escritos a mano
 # ---------------------------------------------------------
@@ -1430,23 +1442,32 @@ class RL_Multinomial():
 #TEST
 def test_OP():
     
-    X = cd.X_cancer
-    y= cd.y_cancer
-    test = round(np.random.uniform(0.2,0.8),3)
-    print("--------------------------- TEST OP-----------------")
-    #print("Codifi: ",codifica_one_hot(y))
+    X = cd.X_votos
+    y = cd.y_votos
+    test = 0.3
+    print("--------------------------- TEST OP  Rl-mult-----------------")
+    rend = 0
+    i = 0
+    while(rend < 0.55):
+        # print("Intento ",i)
+        X_training,X_test,y_training,y_test = particion_entr_prueba(X, y, test)
     
-    #print(X)
-    #parm = {"batch_tam":8,"rate":0.1,"rate_decay":False}
-    #rend_valid = rendimiento_validacion_cruzada(RL_Multinomial,parm,X,y,n=5)
-    #print(rend_valid)
-    X_training,X_test,y_training,y_test = particion_entr_prueba(X, y, test)
-   
-    iris = RL_Multinomial(rate=0.01,batch_tam=64,rate_decay=False)
-    iris.entrena(X_training, y_training,n_epochs=39, salida_epoch=True)
-    rend = rendimiento(iris, X_training, y_training)
+        modelo = RL_Multinomial(rate=0.01,batch_tam=64,rate_decay=True)
+        modelo.entrena(X_training, y_training,n_epochs=100, salida_epoch=True)
+        rend = rendimiento(modelo, X_test, y_test)
+        i+=1
+
     print("Rendimiento: ", rend)
     print("--------------------------------------------")
 
     
-test_OP()
+# test1()
+# test2_1()
+# test2_2()
+# test3()
+# test4()
+# test5()
+test6()
+# test7()
+# test8_1(10)
+# test_OP()
