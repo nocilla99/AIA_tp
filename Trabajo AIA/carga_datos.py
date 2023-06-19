@@ -88,10 +88,10 @@ y_cancer=cancer.target
 #np.save("datos/imdb_sentiment/y_train_text.npy",y_train)
 #np.save("datos/imdb_sentiment/y_test_text.npy",y_test)
 
-# X_train_imdb=np.load("datos/imdb_sentiment/vect_train_text.npy")
-# X_test_imdb=np.load("datos/imdb_sentiment/vect_test_text.npy")
-# y_train_imdb=np.load("datos/imdb_sentiment/y_train_text.npy")
-# y_test_imdb=np.load("datos/imdb_sentiment/y_test_text.npy")
+X_train_imdb=np.load("Trabajo AIA/datos/imdb_sentiment/vect_train_text.npy")
+X_test_imdb=np.load("Trabajo AIA/datos/imdb_sentiment/vect_test_text.npy")
+y_train_imdb=np.load("Trabajo AIA/datos/imdb_sentiment/y_train_text.npy")
+y_test_imdb=np.load("Trabajo AIA/datos/imdb_sentiment/y_test_text.npy")
 
 # ----------------------------------------------------------------
 

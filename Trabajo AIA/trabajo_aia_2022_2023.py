@@ -892,7 +892,7 @@ def test4():
     print("--------------------------- TEST 4 val_cruzada -----------------")
 
     rendimiento_validacion_cruzada(RegresionLogisticaMiniBatch,
-                               {"batch_tam":8,"rate":0.001,"rate_decay":True},
+                               {"batch_tam":16,"rate":0.01,"rate_decay":True},
                                 X,y,n=5)
     print("--------------------------------------------")
 
@@ -1281,8 +1281,73 @@ def test8_1(muestras_randoms):
 
 
 # --------------------------------------------------------------------------
+import os
+import zipfile
 
-#descargar y aplicar funciones
+# Funcion leer los datos de imagenes
+def caragar_imagenes(ruta):
+    # Abrimos el arcvhivo en modo r (lectura(read)) 
+    with open(ruta, "r") as f:
+        # Almacenamos en lineas todas las lineas que las lee en el archivo
+        lineas = f.readlines()
+    # Ahora con la variable imagenes almacenamos todas las imagenes (filas las caracteristicas) proceseadas
+    imagenes = []
+    for linea in lineas:
+        # aqui utlizamos np.where en lugar de un bucle for , he utlizado np.logical_or para si vea un 
+        # "+" (borde del dígito) o "#" (interior del dígito) le asigna '0' pixel negro sino 
+        # que sea un espacio le asgina '1' pixel blanco que al final obetenmos una matriz binaria con 0s y 1s
+        imagen = np.where(np.logical_or(linea.strip() == '+', linea.strip() == '#'), 0, 1)
+        # lo almacenamos en imagenes
+        imagenes.append(imagen)
+    # convertimos las imagenes a un array de numpy
+    return np.array(imagenes)
+
+# Funcion para leer las clsificaciones de las imagenes
+def cargar_etiquetas(ruta):
+    # creamos la variable etiquetas para almacenar las etiquetas
+    etiquetas = []
+    # Abrimos el archvio con le modo r
+    with open(ruta, "r") as f:
+        # iteramos cada linea y lo almacenamos en etiqutas como entero elimnando los espacios blancos
+        for linea in f:
+            etiquetas.append(int(linea.strip()))
+    # convertimos las etiquetas a un array de numpy
+    return np.array(etiquetas)
+
+def extrair_datos_zip(nom_zip):
+    with zipfile.ZipFile(nom_zip, "r") as zip:
+        zip.extractall("Trabajo AIA/datos/digitos")
+    
+    ruta = os.path.join("Trabajo AIA/datos/digitos", "")
+
+    X_training = caragar_imagenes(os.path.join(ruta,"trainingimages"))
+    X_valid = caragar_imagenes(os.path.join(ruta,"validationimages"))
+    X_test = caragar_imagenes(os.path.join(ruta,"testimages"))
+
+    y_training = cargar_etiquetas(os.path.join(ruta,"traininglabels"))
+    y_valid = cargar_etiquetas(os.path.join(ruta,"validationlabels"))
+    y_test = cargar_etiquetas(os.path.join(ruta,"testlabels"))
+
+    return X_training, y_training, X_valid, y_valid, X_test, y_test
+
+def test8_2():
+    X_training, y_training, X_valid, y_valid, X_test, y_test = extrair_datos_zip("Trabajo AIA/datos/digitdata.zip")
+    print("shape_Xtr :", X_training.shape)
+    print("shape_ytr :", y_training.shape)
+    print("shape_XV :", X_valid.shape)
+    print("shape_yV :", y_valid.shape)
+    print("shape_Xt :", X_test.shape)
+    print("shape_yt :", y_test.shape)
+
+#    modelo = RL_OvR(rate=0.1,rate_decay=False,batch_tam=64)
+#    modelo.entrena(X_training,y_training,salida_epoch=False)
+
+#    rend_valid = rendimiento(modelo, X_valid,y_valid)
+#    rend_test = rendimiento(modelo, X_test, y_test)
+
+#    print(f"Rendimiento en validacion: {rend_valid}")
+#    print(f"Rendimiento en test: {rend_test}")
+
 
 # =========================================================================
 # EJERCICIO OPCIONAL PARA SUBIR NOTA: 
@@ -1462,13 +1527,14 @@ def test_OP():
     print("--------------------------------------------")
 
     
-test1()
-test2_1()
-test2_2()
-test3()
-test4()
-test5()
-test6()
-test7()
-test8_1(10)
-test_OP()
+#test1()
+#test2_1()
+#test2_2()
+#test3()
+#test4()
+#test5()
+#test6()
+#test7()
+#test8_1(10)
+test8_2()
+#test_OP()
