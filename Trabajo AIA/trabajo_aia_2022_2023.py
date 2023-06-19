@@ -642,9 +642,6 @@ class RegresionLogisticaMiniBatch():
         coste = np.sum(array_entropias) 
         return coste/len(array_entropias)
     
-    
-    # HE UTILIZADO CASI LO MISMO QUE EL TUYO CAMBIANDO ALGUNAS COSAS PORQUE HE AÑADIDO UNA FUNCION AUXILIAR QUE 
-    # ES entropia_cruzada , rendimiento  y inicializar_pesos 
     def entrena(self,X,y,Xv=None,yv=None,n_epochs=100,salida_epoch=False, early_stopping=False,paciencia=3):
 
         self.clases, y = procesar_y(np.unique(y), y)
@@ -675,7 +672,6 @@ class RegresionLogisticaMiniBatch():
         #Separar en batchs  
         partes = self.batch_tam      
         X_partes = np.array_split(X, (len(X)/self.batch_tam))
-        # [X[i:i + self.batch_tam] for i in range(0, len(X), self.batch_tam)]
         y_partes = np.array_split(y, (len(y)/self.batch_tam))
 
         for epoch in range(self.n_epochs):
@@ -686,25 +682,18 @@ class RegresionLogisticaMiniBatch():
             #parte de minibatch
             for i in range(len(self.weight)):
                 
-                for minibatch in range(len(X_partes)):
-                    suma = 0
-                    suma_bias = 0
-                    
-                    conjunto_x = X_partes[minibatch]
-                    conjunto_y = y_partes[minibatch]
-                    
-                    # tamaños = np.unique([len(X_partes[z]) for z in range(0,len(X_partes))])
+                for i in range(0, X.shape[0], self.batch_tam):
+                
+                    X_batch = X[i:i + self.batch_tam]
+                    y_batch = y[i:i + self.batch_tam] 
 
                     #wi ← wi + η*sum j∈B( [(y(j) − σ(w*x(j)))x_i(j)])
+                    z = np.dot(X_batch, self.weight) + self.bias
+                    y_pred =  sigmoide(aux[0])
+                    pesos = np.dot(X_batch.T, y_pred - y_batch)
+                    suma_bias = np.sum(y_pred - y_batch)
 
-                    for j in range(len(conjunto_x)):
-                        aux = np.dot(conjunto_x[j], self.weight) + self.bias
-                        calculo = (conjunto_y[j] - sigmoide(aux[0])) * conjunto_x[j][i]
-                        suma += calculo
-                        #el error de prediccion
-                        suma_bias += sigmoide(aux[0]) - conjunto_y[j]
-
-                    self.weight[i] += rate*suma
+                    self.weight += rate*pesos
                     self.bias -= suma_bias
 
             if(early_stopping or salida_epoch):
@@ -732,6 +721,7 @@ class RegresionLogisticaMiniBatch():
                     else:
                         mejor_entropia = ec_Xv
                         epochs_sin_mejora = 0
+    
 
     def clasifica_prob(self,ejemplos):
         if self.weight is None or self.bias is None:
