@@ -856,32 +856,43 @@ def test3():
 
 def rendimiento_validacion_cruzada(clase_clasificador,params,X,y,Xv=None,yv=None,n=5):
     # hemos usado permutation porque no afecta al orden original del conjunto de datos sino crea un array nuevo y lo altera
+    # permutamos los indices de los datos aleatoriamente y despues con np.array_split dividimos los indices perumtados 
+    # en 'n' partes iguales  
     particiones = np.array_split(np.random.permutation(range(len(X))), n)
     # para almacenar el rendimiento de cada iteracion en la valid_cruz
     rends = []
-
+    # iteramos cada particion i en range n partes
     for i in range(n):
-       
+        # conectamos los partes de indices de train que no sean iguales al particion actual i
         indices_entrenamiento = np.concatenate([particiones[j] for j in range(n) if j != i])
+        # almacenamos los partes de los indices de valid que son los i particciones actuales
         indices_validacion = particiones[i]
         
+        # en este paso obtenemos los datos de train con los indices de train
         X_training = X[indices_entrenamiento]
         y_training = y[indices_entrenamiento]
-        X_validacion = X[indices_validacion]
-        y_validacion = y[indices_validacion]
 
-        # entrenamos los datos de training
+        # comprobamos si los daots de Xv o yv son None entonces son iguales a los datos de X_train y y_train
+        # sino obtenemos los datos de Xv y yv con los indices de valid
+        if Xv is None or yv is None:
+            Xv = X_training
+            yv = y_training
+        else :
+            Xv = X[indices_validacion]
+            yv = y[indices_validacion]
+
+        # entrenamos los datos de training utilizando cualquier clasificador que queremos
         clasificador = clase_clasificador(**params)
         clasificador.entrena(X_training,y_training)
 
         # evaluamos el rendimineto de los daots de validacion
-        rend = rendimiento(clasificador,X_validacion, y_validacion)
+        rend = rendimiento(clasificador,Xv, yv)
         rends.append(rend)
         print(f"Partición {i+1}. Rendimiento: {rend}")
 
     # rendimiento medio entre todos los rendimintos
     rend_med = np.mean(rends)
-    print("Rendimiento :",rend_med)
+    print("Rendimiento medio: ",rend_med)
     return rend_med
 
 #TEST
@@ -890,12 +901,16 @@ def test4():
     X = cd.X_cancer
     y= cd.y_cancer
     print("--------------------------- TEST 4 val_cruzada -----------------")
-
-    rendimiento_validacion_cruzada(RegresionLogisticaMiniBatch,
+    rend = 0.0
+    while (rend < 0.5):
+        rend = rendimiento_validacion_cruzada(RegresionLogisticaMiniBatch,
                                {"batch_tam":16,"rate":0.01,"rate_decay":True},
                                 X,y,n=5)
+    X_partir, X_te, y_partir, y_te = particion_entr_prueba(X, y, 0.2) 
+    lr16=RegresionLogisticaMiniBatch(batch_tam=16,rate=0.01,rate_decay=True)
+    lr16.entrena(X_partir,y_partir)
+    print("Rendiemtno mejor: ",rendimiento(lr16,X_te,y_te))
     print("--------------------------------------------")
-
 
 
 # ===================================================
@@ -937,7 +952,7 @@ def test5():
     print("CONJUNTO VOTOS")
     X = cd.X_votos
     y= cd.y_votos
-    test = 0.3
+    test = 0.
     
     X_partir, X_te, y_partir, y_te = particion_entr_prueba(X, y, test)   
     X_tr,X_v,y_tr,y_v = particion_entr_prueba(X_partir, y_partir, test)
@@ -1543,8 +1558,8 @@ def test_OP():
 #test2_1()
 #test2_2()
 #test3()
-#test4()
-test5()
+test4()
+#test5()
 #test6()
 #test7()
 #test8_1(10)
