@@ -1507,7 +1507,7 @@ class RL_Multinomial():
             if salida_epoch:
                 EC = self.entropia_cruzada(X, codifica_y)
                 rend = self.rendimiento(X, y)
-                print(f"Epoch {epoch + 1} - Entropia Cruzada: {EC:.7f} - Rendimiento: {rend}")
+                print(f"Epoch {epoch + 1} - Entropia Cruzada: {EC} - Rendimiento: {rend}")
 
     def clasifica_prob(self, ejemplos):
         if self.weights is None or self.biases is None:
@@ -1543,8 +1543,8 @@ def test_OP():
         # print("Intento ",i)
         X_training,X_test,y_training,y_test = particion_entr_prueba(X, y, test)
     
-        modelo = RL_Multinomial(rate=0.01,batch_tam=16,rate_decay=True)
-        modelo.entrena(X_training, y_training,n_epochs=40, salida_epoch=True)
+        modelo = RL_Multinomial(rate=0.1,batch_tam=16,rate_decay=False)
+        modelo.entrena(X_training, y_training,n_epochs=100, salida_epoch=True)
         rend_tes = rendimiento(modelo, X_test, y_test)
         rend_train = rendimiento(modelo, X_training, y_training)
         i+=1
@@ -1558,10 +1558,10 @@ def test_OP():
 #test2_1()
 #test2_2()
 #test3()
-test4()
+#test4()
 #test5()
 #test6()
 #test7()
 #test8_1(10)
 #test8_2()
-#test_OP()
+test_OP()
