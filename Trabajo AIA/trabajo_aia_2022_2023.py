@@ -610,7 +610,7 @@ El proceso de entrenamiento del clasificador lineal basado en regresión logíst
 class RegresionLogisticaMiniBatch():
 
     def __init__(self,rate=0.1,rate_decay=False,n_epochs=100,batch_tam=64):
-        
+        # inicializamos los atributos de la clase 
         self.rate= rate
         self.rate_decay = rate_decay
         self.n_epochs = n_epochs
@@ -622,28 +622,33 @@ class RegresionLogisticaMiniBatch():
         self.bias  = None
   
 
-    # funcion auxliar para incilizar pesos aleatoriamente 
+    # funcion auxliar para incializar los pesos 
     # y los bias en 0 porque en principio no tiene prefrencia hacia una clase en particular
     def inicializar_pesos(self, n_carac):
+        # inicializamos lo pesos con valores aleatorios dentro de un rango [-1,1] con el mismo tam de caracteristicas de X
         self.weight = np.random.uniform(low=-1, high=1,size=(n_carac,))
         self.bias = 0
         return self.weight, self.bias
 
+    # Funcion auxiliar para calcular la entropia cruzada (error entre y_prediccion y y_real)
     def entropia_cruzada(self, X,y):
         
-        # predicciones = sigmoide(np.dot(X,self.weight)+self.bias)
+        # se calcula el y_pred primero calculamos el vector z que es una multiplicacion entre los ejemplos y sus pesos 
+        # y despues aplicamos la funcion sigmoide al resultado y con eso conseguimos el valor de y_pred
+        z = np.dot(X, self.weight) + self.bias
+        predicciones = sigmoide(z)
 
-        prod_escalares = np.dot(X, self.weight) + self.bias
-        predicciones = sigmoide(prod_escalares)
-
-        #suma de las entropias cruzadas de cada ejemplo x
+        # suma de las entropias cruzadas de cada ejemplo x
         # La formula de la ec es (-y * log(pred) - (1 - y) * log(1 - pred)), pero piden usar where. Habra que hacer las medias de cuando "y[i]" valga 1. y cuando sea 0.
         # hemos utilizado np.maximum para evitar los logs de ceros
         coste = np.sum(np.where(y==1, -np.log(np.maximum(predicciones, 000.1)), -np.log(np.maximum(1-predicciones, 000.1))))
         return np.mean(coste)
     
+    # Funcion entrena se encarga de entrenar el modelo de regresión logística 
+    # utilizando el algoritmo de descenso de gradiente estocástico en mini batch
     def entrena(self,X,y,Xv=None,yv=None,n_epochs=100,salida_epoch=False, early_stopping=False,paciencia=3):
-
+        # utilizamos la funcion auxiliar procesar_y para que nos convierta las etiquetas en una representacion binaria 
+        # y las clases 
         self.clases, y = procesar_y(np.unique(y), y)
         self.n_epochs = n_epochs
 
@@ -652,7 +657,8 @@ class RegresionLogisticaMiniBatch():
         norm.ajusta(X)
         X = norm.normaliza(X)
         
-
+        # Comparamos los datos de X_valid y y_valid son None serian igual a los datos de train (X , y) 
+        # sino los normalizamos y procesamos los datos de validacion
         if(Xv is None or yv is None):
             yv = y
             Xv = X
@@ -668,22 +674,26 @@ class RegresionLogisticaMiniBatch():
         # INICIALIZA LOS PESOS
         self.weight , self.bias = self.inicializar_pesos(X.shape[1])
             
-
+        # iteramos cada epoch
         for epoch in range(self.n_epochs):
 
             if(self.rate_decay):
                 rate = (rate)*(1/( 1 + self.n_epochs))
 
-            #parte de minibatch
-            
+            # PARTE DE MINI-BATCH
+
+            # Alteramos los indices de los datos y conseguimos los datos
             indices = np.random.permutation(len(X))
             X = X[indices]
             y = y[indices]
-                
+            
+            # Para cada mini batch dividimos los datos alterados en mini-batch
             for i in range(0, X.shape[0], self.batch_tam):
                 
                 X_batch = X[i:i + self.batch_tam]
                 y_batch = y[i:i + self.batch_tam] 
+
+                # Actualizamos los pesos atraves de la siguiente formula 
 
                 #wi ← wi + η*sum j∈B( [(y(j) − σ(w*x(j)))x_i(j)])
                 z = np.dot(X_batch, self.weight) + self.bias
@@ -693,7 +703,8 @@ class RegresionLogisticaMiniBatch():
 
                 self.weight -= rate*pesos
                 self.bias -= rate*suma_bias
-
+            # si habilitamos el early_stopping o salida_epoch calculamos la entropia cruzada
+            #  y el renidmiento de los datos de train y validacion 
             if(early_stopping or salida_epoch):
 
                 ec_Xv = self.entropia_cruzada(Xv, yv)
@@ -709,6 +720,8 @@ class RegresionLogisticaMiniBatch():
                     print(f"Epoch {epoch +1}, en entrenamiento EC: {ec_X}, rendimiento: {rendimiento_X}")
                     print(f"         en validación    EC: {ec_Xv}, rendimiento: {rendimiento_Xv}")
 
+                # si se ha mejorado la entropia seguimos con el entrenamiento del modelo 
+                # si se ha pasado 3 epoch y no ha mejorado la entropia es decir no se ha decrementado se para el algoritmo
                 if(early_stopping): 
                     if ( ec_Xv > mejor_entropia):
                         epochs_sin_mejora += 1
@@ -720,7 +733,7 @@ class RegresionLogisticaMiniBatch():
                         mejor_entropia = ec_Xv
                         epochs_sin_mejora = 0
     
-
+    # Una funcion auxiliar para calcular las etiquetas predichas
     def clasifica_prob(self,ejemplos):
         if self.weight is None or self.bias is None:
             raise ClasificadorNoEntrenado("El clasificador no ha sido entrenado.")
@@ -731,15 +744,20 @@ class RegresionLogisticaMiniBatch():
         predicciones = sigmoide(z) 
         return predicciones
 
-
+    # una funcion para clasificar los nuevos ejemplos 
     def clasifica(self,ejemplo):
-        probabilidad = self.clasifica_prob(ejemplo)
-        # entonces ahora despues de obtener la probadlidad asignamos que si la prob >= 0.5 enonces su clasificacion 1
-        # sino le asiganmos una clasificacion 0
-        return np.where(probabilidad > 0.5, self.clases[1], self.clases[0])
 
+        probabilidad = self.clasifica_prob(ejemplo)
+        # entonces ahora despues de obtener la probadlidad de las etiquetas
+        #  asignamos que si la prob >= 0.5 enonces su clasificacion 1
+        # sino le asiganmos una clasificacion 0
+        return np.where(probabilidad >= 0.5, self.clases[1], self.clases[0])
+
+    # una funcion para calcular la precision de los datos al comparar las etiquetas predichas con las etiquetas reales
+    # para los ejemplos de entrada
     def rendimiento(self, X, y):
         predicciones = self.clasifica(X)
+        # se cuentas los aciertos y lo dividimos entre el numero totas de ejemplos
         aciertos = (predicciones == y).sum()
         precision = aciertos / y.shape[0]
         return precision
