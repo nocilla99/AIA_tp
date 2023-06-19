@@ -939,24 +939,36 @@ def test5():
     y= cd.y_votos
     test = 0.3
     
-    X_partir, X_te, y_partir, y_te = particion_entr_prueba(X, y, 0.3)   
-    X_tr,X_v,y_tr,y_v = particion_entr_prueba(X_partir, y_partir, 0.3)
+    X_partir, X_te, y_partir, y_te = particion_entr_prueba(X, y, test)   
+    X_tr,X_v,y_tr,y_v = particion_entr_prueba(X_partir, y_partir, test)
     modelovotos = RegresionLogisticaMiniBatch(rate=0.01,rate_decay=False,n_epochs=100,batch_tam=64)
     modelovotos.entrena(X_tr,y_tr,X_v, y_v,100,True,True,3)
     _,y_test_pro = procesar_y(np.unique(y),y_te)
     tasa  = rendimiento(modelovotos,X_te,y_test_pro)
     print("Rendimiento test",tasa)
     
-    print("Conjunto cancer")
+    print("\nCONJUNTO CANCER")
     X = cd.X_cancer
     y= cd.y_cancer
     test = 0.3
     
-    X_partir, X_te, y_partir, y_te = particion_entr_prueba(X, y, 0.3)   
-    X_tr,X_v,y_tr,y_v = particion_entr_prueba(X_partir, y_partir, 0.3)
-    modelovotos = RegresionLogisticaMiniBatch(rate=0.001,rate_decay=True,n_epochs=100,batch_tam=16)
-    modelovotos.entrena(X_tr,y_tr,X_v, y_v,100,False,False,3)
-    tasa  = rendimiento(modelovotos,X_te,y_te)
+    X_partir, X_te, y_partir, y_te = particion_entr_prueba(X, y, test)   
+    X_tr,X_v,y_tr,y_v = particion_entr_prueba(X_partir, y_partir, test)
+    modelocancer = RegresionLogisticaMiniBatch(rate=0.001,rate_decay=True,n_epochs=100,batch_tam=16)
+    modelocancer.entrena(X_tr,y_tr,X_v, y_v,100,True,True,3)
+    tasa  = rendimiento(modelocancer,X_te,y_te)
+    print("Rendimiento test",tasa)
+    
+    print("\nCONJUNTO IMDB")
+    X = cd.X_train_imdb
+    y = cd.y_train_imdb
+    test = 0.3
+    X_partir, X_te, y_partir, y_te = particion_entr_prueba(X, y, test)   
+    X_tr,X_v,y_tr,y_v = particion_entr_prueba(X_partir, y_partir, test)
+    modeloCríticas = RegresionLogisticaMiniBatch(rate=0.1,rate_decay=False,n_epochs=50,batch_tam=16)
+    modeloCríticas.entrena(X_tr,y_tr,X_v, y_v,50,False,False,3)
+    _,y_test_pro = procesar_y(np.unique(y),y_te)
+    tasa  = rendimiento(modeloCríticas,X_te,y_test_pro)
     print("Rendimiento test",tasa)
     print("--------------------------------------------") 
 
@@ -1532,9 +1544,9 @@ def test_OP():
 #test2_2()
 #test3()
 #test4()
-#test5()
+test5()
 #test6()
 #test7()
 #test8_1(10)
-test8_2()
+#test8_2()
 #test_OP()
