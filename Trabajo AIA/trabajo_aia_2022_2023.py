@@ -625,7 +625,7 @@ class RegresionLogisticaMiniBatch():
     # funcion auxliar para incilizar pesos aleatoriamente 
     # y los bias en 0 porque en principio no tiene prefrencia hacia una clase en particular
     def inicializar_pesos(self, n_carac):
-        self.weight = np.random.uniform(low=-1, high=1,size=(n_carac,1))
+        self.weight = np.random.uniform(low=-1, high=1,size=(n_carac,))
         self.bias = 0
         return self.weight, self.bias
 
@@ -633,14 +633,14 @@ class RegresionLogisticaMiniBatch():
         
         # predicciones = sigmoide(np.dot(X,self.weight)+self.bias)
 
-        prod_escalares = [np.dot(fila, self.weight)[0] + self.bias for fila in X]
+        prod_escalares = np.dot(X, self.weight) + self.bias
         predicciones = sigmoide(prod_escalares)
 
         #suma de las entropias cruzadas de cada ejemplo x
         # La formula de la ec es (-y * log(pred) - (1 - y) * log(1 - pred)), pero piden usar where. Habra que hacer las medias de cuando "y[i]" valga 1. y cuando sea 0.
-        array_entropias = [np.where(y[i]==1, -np.log(np.maximum(predicciones[i], 000.1)), -np.log(np.maximum(1-predicciones[i], 000.1))) for i in range(0,len(predicciones))]
-        coste = np.sum(array_entropias) 
-        return coste/len(array_entropias)
+        # hemos utilizado np.maximum para evitar los logs de ceros
+        coste = np.sum(np.where(y==1, -np.log(np.maximum(predicciones, 000.1)), -np.log(np.maximum(1-predicciones, 000.1))))
+        return np.mean(coste)
     
     def entrena(self,X,y,Xv=None,yv=None,n_epochs=100,salida_epoch=False, early_stopping=False,paciencia=3):
 
@@ -661,18 +661,13 @@ class RegresionLogisticaMiniBatch():
             Xv = norm.normaliza(Xv)
             _, yv = procesar_y(np.unique(yv), yv)
         
-        
 
         mejor_entropia = np.Infinity
         epochs_sin_mejora = 0
         rate = self.rate
         # INICIALIZA LOS PESOS
         self.weight , self.bias = self.inicializar_pesos(X.shape[1])
-        
-        #Separar en batchs  
-        partes = self.batch_tam      
-        X_partes = np.array_split(X, (len(X)/self.batch_tam))
-        y_partes = np.array_split(y, (len(y)/self.batch_tam))
+            
 
         for epoch in range(self.n_epochs):
 
@@ -680,21 +675,24 @@ class RegresionLogisticaMiniBatch():
                 rate = (rate)*(1/( 1 + self.n_epochs))
 
             #parte de minibatch
-            for i in range(len(self.weight)):
+            
+            indices = np.random.permutation(len(X))
+            X = X[indices]
+            y = y[indices]
                 
-                for i in range(0, X.shape[0], self.batch_tam):
+            for i in range(0, X.shape[0], self.batch_tam):
                 
-                    X_batch = X[i:i + self.batch_tam]
-                    y_batch = y[i:i + self.batch_tam] 
+                X_batch = X[i:i + self.batch_tam]
+                y_batch = y[i:i + self.batch_tam] 
 
-                    #wi ← wi + η*sum j∈B( [(y(j) − σ(w*x(j)))x_i(j)])
-                    z = np.dot(X_batch, self.weight) + self.bias
-                    y_pred =  sigmoide(aux[0])
-                    pesos = np.dot(X_batch.T, y_pred - y_batch)
-                    suma_bias = np.sum(y_pred - y_batch)
+                #wi ← wi + η*sum j∈B( [(y(j) − σ(w*x(j)))x_i(j)])
+                z = np.dot(X_batch, self.weight) + self.bias
+                y_pred =  sigmoide(z)
+                pesos = np.dot(X_batch.T, (y_pred - y_batch))
+                suma_bias = np.sum(y_pred - y_batch)
 
-                    self.weight += rate*pesos
-                    self.bias -= suma_bias
+                self.weight -= rate*pesos
+                self.bias -= rate*suma_bias
 
             if(early_stopping or salida_epoch):
 
@@ -728,7 +726,7 @@ class RegresionLogisticaMiniBatch():
             raise ClasificadorNoEntrenado("El clasificador no ha sido entrenado.")
         
         # vector z que contiene la union lineal para cada ejemplo despues de multiplicarle con su peso y le suma el sesgo
-        z = [np.dot(fila, self.weight)[0] + self.bias for fila in ejemplos]
+        z = np.dot(ejemplos, self.weight) + self.bias 
         # despues de aplicarle el sigmoide al vector z nos sale las probalidades de prediccion de cada ejemplo X
         predicciones = sigmoide(z) 
         return predicciones
@@ -761,14 +759,14 @@ def test3():
     test = 0.3
     print("--------------------------- TEST 3 RL-binario-----------------")
 
-    X= cd.X_votos
-    y = cd.y_votos
+    #X= cd.X_votos
+    #y = cd.y_votos
     
     X_partir,X_test,y_partir,y_test = particion_entr_prueba(X, y,test)
-    X_training,X_vali,y_training,y_vali = particion_entr_prueba(X_partir,y_partir,0.3)
+    X_training,X_vali,y_training,y_vali = particion_entr_prueba(X_partir,y_partir,0.2)
 
-    clasif_rl = RegresionLogisticaMiniBatch(0.1,n_epochs=15,batch_tam=16)
-    clasif_rl.entrena(X_training,y_training,X_vali,y_vali,40,True,True,10)
+    clasif_rl = RegresionLogisticaMiniBatch(0.01,n_epochs=50,batch_tam=64)
+    clasif_rl.entrena(X_training,y_training,X_vali,y_vali,50,True,True,3)
     _,y_test_pro = procesar_y(np.unique(y),y_test)
     tasa  = rendimiento(clasif_rl,X_test,y_test_pro)
 
@@ -1547,11 +1545,11 @@ def test_OP():
 #test1()
 #test2_1()
 #test2_2()
-#test3()
+test3()
 #test4()
 #test5()
 #test6()
 #test7()
 #test8_1(10)
 #test8_2()
-test_OP()
+#test_OP()
