@@ -1467,7 +1467,7 @@ class RL_Multinomial():
         self.biases = None
    # inicializamos lo pesos con valores aleatorios dentro de un rango [-0.2,0.2] con el mismo tam de caracteristicas de X
     def inicializacion_pesos(self, n_carac, n_clases):
-        self.weight = np.random.uniform(low=-0.2, high=0.2,size=n_carac)
+        self.weights = np.random.uniform(low=-0.2, high=0.2,size=(n_carac,n_clases))
         self.biases = np.zeros(n_clases)
 
     def entropia_cruzada(self, X, y):
@@ -1566,14 +1566,14 @@ def test_OP():
     print("--------------------------------------------")
 
     
-#test1()
-#test2_1()
-#test2_2()
-# test3()
-# test4()
-# test5()
-# test6()
-# test7()
-# test8_1(10)
+test1()
+test2_1()
+test2_2()
+test3()
+test4()
+test5()
+test6()
+test7()
+test8_1(10)
 # test8_2()
-# test_OP()
+test_OP()
