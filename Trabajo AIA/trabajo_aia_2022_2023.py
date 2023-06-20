@@ -1329,7 +1329,7 @@ def caragar_imagenes(ruta):
         # aqui utlizamos np.where en lugar de un bucle for , he utlizado np.logical_or para si vea un 
         # "+" (borde del dígito) o "#" (interior del dígito) le asigna '0' pixel negro sino 
         # que sea un espacio le asgina '1' pixel blanco que al final obetenmos una matriz binaria con 0s y 1s
-        imagen = np.where(np.logical_or(linea.strip() == '+', linea.strip() == '#'), 0, 1)
+        imagen = [(np.where(np.logical_or(char == '#', char == '+'), 0, 1)) for char in linea]
         # lo almacenamos en imagenes
         imagenes.append(imagen)
     # convertimos las imagenes a un array de numpy
@@ -1365,22 +1365,21 @@ def extrair_datos_zip(nom_zip):
 
 def test8_2():
     X_training, y_training, X_valid, y_valid, X_test, y_test = extrair_datos_zip("Trabajo AIA/datos/digitdata.zip")
-    print("shape_Xtr :", X_training.shape)
-    print("shape_ytr :", y_training.shape)
-    print("shape_XV :", X_valid.shape)
-    print("shape_yV :", y_valid.shape)
-    print("shape_Xt :", X_test.shape)
-    print("shape_yt :", y_test.shape)
+    # print("shape_Xtr :", X_training.shape)
+    # print("shape_ytr :", y_training.shape)
+    # print("shape_XV :", X_valid.shape)
+    # print("shape_yV :", y_valid.shape)
+    # print("shape_Xt :", X_test.shape)
+    # print("shape_yt :", y_test.shape)
 
-#    modelo = RL_OvR(rate=0.1,rate_decay=False,batch_tam=64)
-#    modelo.entrena(X_training,y_training,salida_epoch=False)
+    modelo = RL_OvR(rate=0.1,rate_decay=False,batch_tam=64)
+    modelo.entrena(X_training,y_training,salida_epoch=False)
 
 #    rend_valid = rendimiento(modelo, X_valid,y_valid)
 #    rend_test = rendimiento(modelo, X_test, y_test)
 
 #    print(f"Rendimiento en validacion: {rend_valid}")
 #    print(f"Rendimiento en test: {rend_test}")
-
 
 # =========================================================================
 # EJERCICIO OPCIONAL PARA SUBIR NOTA: 
@@ -1563,11 +1562,11 @@ def test_OP():
 #test1()
 #test2_1()
 #test2_2()
-test3()
-#test4()
-#test5()
-#test6()
-#test7()
-#test8_1(10)
-#test8_2()
-#test_OP()
+# test3()
+# test4()
+# test5()
+# test6()
+# test7()
+# test8_1(10)
+test8_2()
+# test_OP()
