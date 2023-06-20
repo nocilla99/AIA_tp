@@ -626,7 +626,7 @@ class RegresionLogisticaMiniBatch():
     # y los bias en 0 porque en principio no tiene prefrencia hacia una clase en particular
     def inicializar_pesos(self, n_carac):
         # inicializamos lo pesos con valores aleatorios dentro de un rango [-1,1] con el mismo tam de caracteristicas de X
-        self.weight = np.random.uniform(low=-1, high=1,size=(n_carac,))
+        self.weight = np.random.uniform(low=0.2, high=0.2,size=n_carac)
         self.bias = 0
         return self.weight, self.bias
 
