@@ -683,7 +683,7 @@ class RegresionLogisticaMiniBatch():
             # PARTE DE MINI-BATCH
 
             # Alteramos los indices de los datos y conseguimos los datos
-            indices = np.random.permutation(len(X))
+            indices = np.random.permutation(min(X.shape[0],y.shape[0]))
             X = X[indices]
             y = y[indices]
             
@@ -1329,9 +1329,11 @@ def caragar_imagenes(ruta):
         # aqui utlizamos np.where en lugar de un bucle for , he utlizado np.logical_or para si vea un 
         # "+" (borde del dígito) o "#" (interior del dígito) le asigna '0' pixel negro sino 
         # que sea un espacio le asgina '1' pixel blanco que al final obetenmos una matriz binaria con 0s y 1s
-        imagen = [(np.where(np.logical_or(char == '#', char == '+'), 0, 1)) for char in linea]
+        imagen = [(np.where(np.logical_or(char == '#', char == '+'), 0, 1)) for char in linea[:28]]
+        
         # lo almacenamos en imagenes
         imagenes.append(imagen)
+        
     # convertimos las imagenes a un array de numpy
     return np.array(imagenes)
 
@@ -1341,7 +1343,8 @@ def cargar_etiquetas(ruta):
     etiquetas = []
     # Abrimos el archvio con le modo r
     with open(ruta, "r") as f:
-        # iteramos cada linea y lo almacenamos en etiqutas como entero elimnando los espacios blancos
+        
+    # iteramos cada linea y lo almacenamos en etiqutas como entero elimnando los espacios blancos
         for linea in f:
             etiquetas.append(int(linea.strip()))
     # convertimos las etiquetas a un array de numpy
@@ -1365,21 +1368,21 @@ def extrair_datos_zip(nom_zip):
 
 def test8_2():
     X_training, y_training, X_valid, y_valid, X_test, y_test = extrair_datos_zip("Trabajo AIA/datos/digitdata.zip")
-    # print("shape_Xtr :", X_training.shape)
-    # print("shape_ytr :", y_training.shape)
-    # print("shape_XV :", X_valid.shape)
-    # print("shape_yV :", y_valid.shape)
-    # print("shape_Xt :", X_test.shape)
-    # print("shape_yt :", y_test.shape)
+    #print("shape_Xtr :", X_training.shape)
+    #print("shape_ytr :", y_training.shape)
+    #print("shape_XV :", X_valid.shape)
+    #print("shape_yV :", y_valid.shape)
+    #print("shape_Xt :", X_test.shape)
+    #print("shape_yt :", y_test.shape)
 
     modelo = RL_OvR(rate=0.1,rate_decay=False,batch_tam=64)
     modelo.entrena(X_training,y_training,salida_epoch=False)
+    
+    rend_valid = rendimiento(modelo, X_valid,y_valid)
+    rend_test = rendimiento(modelo, X_test, y_test)
 
-#    rend_valid = rendimiento(modelo, X_valid,y_valid)
-#    rend_test = rendimiento(modelo, X_test, y_test)
-
-#    print(f"Rendimiento en validacion: {rend_valid}")
-#    print(f"Rendimiento en test: {rend_test}")
+    print(f"Rendimiento en validacion: {rend_valid}")
+    print(f"Rendimiento en test: {rend_test}")
 
 # =========================================================================
 # EJERCICIO OPCIONAL PARA SUBIR NOTA: 
