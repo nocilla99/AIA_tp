@@ -958,7 +958,7 @@ def test5():
     print("CONJUNTO VOTOS")
     X = cd.X_votos
     y= cd.y_votos
-    test = 0.
+    test = 0.3
     
     X_partir, X_te, y_partir, y_te = particion_entr_prueba(X, y, test)   
     X_tr,X_v,y_tr,y_v = particion_entr_prueba(X_partir, y_partir, test)
@@ -975,7 +975,7 @@ def test5():
     
     X_partir, X_te, y_partir, y_te = particion_entr_prueba(X, y, test)   
     X_tr,X_v,y_tr,y_v = particion_entr_prueba(X_partir, y_partir, test)
-    modelocancer = RegresionLogisticaMiniBatch(rate=0.001,rate_decay=True,n_epochs=100,batch_tam=16)
+    modelocancer = RegresionLogisticaMiniBatch(rate=0.01,rate_decay=False,n_epochs=100,batch_tam=16)
     modelocancer.entrena(X_tr,y_tr,X_v, y_v,100,True,True,3)
     tasa  = rendimiento(modelocancer,X_te,y_te)
     print("Rendimiento test",tasa)
@@ -1567,9 +1567,9 @@ def test_OP():
 #test2_2()
 # test3()
 # test4()
-# test5()
+test5()
 # test6()
 # test7()
 # test8_1(10)
-test8_2()
+#test8_2()
 # test_OP()
