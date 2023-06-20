@@ -183,7 +183,7 @@ import numpy as np
 
 ## ---------- 
 def particion_entr_prueba(X,y,test=0.2):
-    #encuentra las clases que hay y su cantidad
+    
     clases, n_clases = np.unique(y, return_counts=True)
     tam_test = np.floor(n_clases * test).astype(int)
     tam_train = n_clases - tam_test
@@ -192,8 +192,7 @@ def particion_entr_prueba(X,y,test=0.2):
     indices = np.arange(len(y))
     indices_train = list()
     indices_test = list()
-    #sacar los indices de cada clase que van a ir tanto a train como a test, 
-    # pasarlos a lista y devolverlos al final
+
     for clase, n_train, n_test in zip(clases, tam_train, tam_test):
         indice = indices[y == clase]
         np.random.permutation(indice)
@@ -626,8 +625,8 @@ class RegresionLogisticaMiniBatch():
     # funcion auxliar para incializar los pesos 
     # y los bias en 0 porque en principio no tiene prefrencia hacia una clase en particular
     def inicializar_pesos(self, n_carac):
-        # inicializamos lo pesos con valores aleatorios dentro de un rango [-0.2,0.2] con el mismo tam de caracteristicas de X
-        self.weight = np.random.uniform(low=-0.2, high=0.2,size=n_carac)
+        # inicializamos lo pesos con valores aleatorios dentro de un rango [-1,1] con el mismo tam de caracteristicas de X
+        self.weight = np.random.uniform(low=0.2, high=0.2,size=n_carac)
         self.bias = 0
         return self.weight, self.bias
 
@@ -642,13 +641,15 @@ class RegresionLogisticaMiniBatch():
         # suma de las entropias cruzadas de cada ejemplo x
         # La formula de la ec es (-y * log(pred) - (1 - y) * log(1 - pred)), pero piden usar where. Habra que hacer las medias de cuando "y[i]" valga 1. y cuando sea 0.
         # hemos utilizado np.maximum para evitar los logs de ceros
-        coste = np.sum(np.where(y==self.clases[1], -np.log(np.maximum(predicciones, 0.001)), -np.log(np.maximum(1-predicciones, 0.001))))
+        coste = np.sum(np.where(y==1, -np.log(np.maximum(predicciones, 000.1)), -np.log(np.maximum(1-predicciones, 000.1))))
         return np.mean(coste)
     
     # Funcion entrena se encarga de entrenar el modelo de regresión logística 
     # utilizando el algoritmo de descenso de gradiente estocástico en mini batch
     def entrena(self,X,y,Xv=None,yv=None,n_epochs=100,salida_epoch=False, early_stopping=False,paciencia=3):
-        self.clases = np.unique(y)
+        # utilizamos la funcion auxiliar procesar_y para que nos convierta las etiquetas en una representacion binaria 
+        # y las clases 
+        self.clases, y = procesar_y(np.unique(y), y)
         self.n_epochs = n_epochs
 
         #normalizar datos entradas
@@ -664,7 +665,7 @@ class RegresionLogisticaMiniBatch():
         else :    
             norm.ajusta(Xv)
             Xv = norm.normaliza(Xv)
-            yv = np.unique(yv)
+            _, yv = procesar_y(np.unique(yv), yv)
         
 
         mejor_entropia = np.Infinity
@@ -697,7 +698,6 @@ class RegresionLogisticaMiniBatch():
                 #wi ← wi + η*sum j∈B( [(y(j) − σ(w*x(j)))x_i(j)])
                 z = np.dot(X_batch, self.weight) + self.bias
                 y_pred =  sigmoide(z)
-                y_batch = np.where(y_batch == self.clases[0],0,1)
                 pesos = np.dot(X_batch.T, (y_pred - y_batch))
                 suma_bias = np.sum(y_pred - y_batch)
 
@@ -762,23 +762,31 @@ class RegresionLogisticaMiniBatch():
         precision = aciertos / y.shape[0]
         return precision
 
+def procesar_y(clases,lista_y):
+    # La clase que se considera positiva es la que 
+    # aparece en segundo lugar en esa lista.
+    transf_binaria = np.where(lista_y==clases[0],0,1)
+    return [0,1], transf_binaria
 
 #TEST
 
 def test3():
-    #los conjuntos cancer e iris dan un rendimiento alto pero en el test no pasan del 0.5 
+    
     X = cd.X_cancer
     y= cd.y_cancer
     test = 0.3
     print("--------------------------- TEST 3 RL-binario-----------------")
 
+    #X= cd.X_votos
+    #y = cd.y_votos
     
     X_partir,X_test,y_partir,y_test = particion_entr_prueba(X, y,test)
     X_training,X_vali,y_training,y_vali = particion_entr_prueba(X_partir,y_partir,0.2)
 
-    clasif_rl = RegresionLogisticaMiniBatch(0.1,n_epochs=50,batch_tam=16)
-    clasif_rl.entrena(X_training,y_training,None,None,50,True,False,3)
-    tasa  = rendimiento(clasif_rl,X_test,y_test)
+    clasif_rl = RegresionLogisticaMiniBatch(0.01,n_epochs=50,batch_tam=64)
+    clasif_rl.entrena(X_training,y_training,X_vali,y_vali,50,True,True,3)
+    _,y_test_pro = procesar_y(np.unique(y),y_test)
+    tasa  = rendimiento(clasif_rl,X_test,y_test_pro)
 
     print("Rendimiento test:",tasa)
     print("--------------------------------------------")
@@ -967,7 +975,7 @@ def test5():
     
     X_partir, X_te, y_partir, y_te = particion_entr_prueba(X, y, test)   
     X_tr,X_v,y_tr,y_v = particion_entr_prueba(X_partir, y_partir, test)
-    modelocancer = RegresionLogisticaMiniBatch(rate=0.01,rate_decay=False,n_epochs=100,batch_tam=16)
+    modelocancer = RegresionLogisticaMiniBatch(rate=0.001,rate_decay=True,n_epochs=100,batch_tam=16)
     modelocancer.entrena(X_tr,y_tr,X_v, y_v,100,True,True,3)
     tasa  = rendimiento(modelocancer,X_te,y_te)
     print("Rendimiento test",tasa)
@@ -1532,14 +1540,14 @@ class RL_Multinomial():
 #TEST
 def test_OP():
     
-    X = cd.X_iris
-    y = cd.y_iris
+    X = cd.X_votos
+    y = cd.y_votos
     test = 0.3
     print("--------------------------- TEST OP  Rl-mult-----------------")
     rend_tes = 0
     rend_train = 0
     i = 0
-    while((rend_tes and rend_train) < 0.12):
+    while((rend_tes and rend_train) < 0.55):
         # print("Intento ",i)
         X_training,X_test,y_training,y_test = particion_entr_prueba(X, y, test)
     
@@ -1559,9 +1567,9 @@ def test_OP():
 #test2_2()
 # test3()
 # test4()
-# test5()
+test5()
 # test6()
 # test7()
 # test8_1(10)
-#test8_2()
-test_OP()
+# test8_2()
+# test_OP()
